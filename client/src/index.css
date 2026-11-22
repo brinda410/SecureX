@@ -1,0 +1,2577 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+/* =========================================
+    GLOBAL THEME
+========================================= */
+
+:root {
+  font-family: 'Inter', sans-serif;
+  color: #c5c1ca;
+  background: #050507;
+
+  --bg-main: #050507;
+  --bg-card: #0a090d;
+  --bg-input: #07070a;
+  --bg-hover: #151016;
+
+  --text-main: #d0cbd3;
+  --text-muted: #827b87;
+  --text-dim: #514b56;
+
+  --accent: #85364e;
+  --accent-light: #a34b65;
+  --accent-dark: #351521;
+
+  --border: #33202a;
+  --border-highlight: #633044;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =========================================
+   LOGIN PAGE BACKGROUND
+   PRESERVED DESIGN
+========================================= */
+
+.reference-login-page {
+  position: fixed;
+  inset: 0;
+  min-height: 100vh;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 35px 20px;
+  overflow-y: auto;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      #190b12 0%,
+      #0b080d 48%,
+      #030405 100%
+    );
+
+  color: var(--text-main);
+  z-index: 1000;
+}
+
+.reference-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.reference-binary {
+  position: absolute;
+  inset: -40px;
+  opacity: 0.12;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='100' viewBox='0 0 260 100'%3E%3Cg fill='%237b344a' font-family='monospace' font-size='15' font-weight='bold'%3E%3Ctext x='5' y='20'%3E0101 1010 0011%3C/text%3E%3Ctext x='90' y='48'%3E1100 0101 1011%3C/text%3E%3Ctext x='20' y='78'%3E0011 1100 0101%3C/text%3E%3C/g%3E%3C/svg%3E");
+
+  background-repeat: repeat;
+  transform: rotate(-2deg) scale(1.05);
+}
+
+.reference-emblem {
+  position: absolute;
+  width: min(75vw, 850px);
+  height: min(75vw, 850px);
+
+  border: 1px solid rgba(130, 43, 69, 0.08);
+  border-radius: 50%;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  box-shadow:
+    0 0 0 70px rgba(130, 43, 69, 0.018),
+    0 0 0 140px rgba(130, 43, 69, 0.012);
+}
+
+.reference-vignette {
+  position: absolute;
+  inset: 0;
+
+  background: radial-gradient(
+    circle,
+    transparent 10%,
+    rgba(0, 0, 0, 0.4) 70%,
+    #020203 100%
+  );
+}
+
+/* =========================================
+   LOGIN CARD
+   PRESERVED DESIGN
+========================================= */
+
+.reference-login-card {
+  position: relative;
+  z-index: 2;
+
+  width: min(520px, 94vw);
+
+  background: rgba(9, 9, 13, 0.97);
+
+  border: 1px solid var(--border-highlight);
+
+  box-shadow:
+    0 20px 70px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(105, 28, 53, 0.09);
+
+  overflow: hidden;
+}
+
+.reference-login-header {
+  min-height: 82px;
+  padding: 17px 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: #09090d;
+  border-bottom: 1px solid var(--border);
+}
+
+.securex-brand {
+  color: #d0cbd3;
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: -1.3px;
+}
+
+.securex-brand span {
+  color: var(--accent-light);
+}
+
+.reference-security-icon {
+  height: 54px;
+  width: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+
+  color: var(--accent-light);
+  background: #100b10;
+
+  font-size: 21px;
+
+  box-shadow: 0 0 15px rgba(130, 35, 65, 0.1);
+}
+
+/* =========================================
+   LOGIN FORM
+   PRESERVED DESIGN
+========================================= */
+
+.reference-login-body {
+  padding: 29px 30px 24px;
+}
+
+.reference-description {
+  margin: 0 0 31px;
+
+  color: #99919e;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.reference-field {
+  margin-bottom: 22px;
+}
+
+.reference-field label {
+  display: block;
+  margin-bottom: 10px;
+
+  color: #aaa1ad;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+}
+
+.reference-field input {
+  display: block;
+  width: 100%;
+  height: 54px;
+
+  padding: 0 17px;
+
+  color: #d2cbd4;
+  background: var(--bg-input);
+
+  border: 1px solid #392630;
+  border-radius: 2px;
+
+  outline: none;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reference-field input::placeholder {
+  color: #625b66;
+  opacity: 1;
+}
+
+.reference-field input:focus {
+  border-color: var(--accent-light);
+  box-shadow: 0 0 13px rgba(145, 40, 70, 0.16);
+}
+
+.reference-field input.securex-password-input {
+  letter-spacing: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.reference-field input.securex-password-input::placeholder {
+  letter-spacing: 0;
+}
+
+/* =========================================
+   LOGIN ERROR
+========================================= */
+
+.reference-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 8px 0 18px;
+  padding: 12px 14px;
+
+  color: #c17b8d;
+  background: rgba(100, 24, 47, 0.13);
+
+  border: 1px solid rgba(130, 43, 69, 0.4);
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   LOGIN BUTTONS
+========================================= */
+
+.reference-login-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 31px;
+}
+
+.reference-login-button {
+  min-width: 160px;
+  min-height: 54px;
+
+  padding: 12px 28px;
+
+  color: #d9cbd2;
+  background: #351521;
+
+  border: 1px solid #783047;
+  border-radius: 2px;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+
+  transition: all 0.25s ease;
+}
+
+.reference-login-button:hover:not(:disabled) {
+  background: #501b30;
+  border-color: #a34b65;
+  box-shadow: 0 0 20px rgba(150, 40, 75, 0.2);
+}
+
+.reference-switch-button {
+  min-height: 40px;
+  margin-top: 19px;
+
+  padding: 8px 14px;
+
+  color: #a66a7c;
+  background: transparent;
+
+  border: 1px solid #49303a;
+  border-radius: 2px;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+
+  transition: all 0.2s ease;
+}
+
+.reference-switch-button:hover:not(:disabled) {
+  color: #d3a0ae;
+  border-color: #854056;
+  background: rgba(100, 25, 50, 0.1);
+}
+
+.reference-login-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  margin-top: 29px;
+  padding-top: 17px;
+
+  border-top: 1px solid rgba(90, 55, 68, 0.25);
+
+  color: #625966;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.1px;
+}
+
+.status-indicator {
+  height: 6px;
+  width: 6px;
+
+  border-radius: 50%;
+
+  background: #80506a;
+  box-shadow: 0 0 7px rgba(130, 65, 90, 0.6);
+}
+
+/* =========================================
+   SECUREX DASHBOARD
+========================================= */
+
+.chat-app {
+  --sx-bg: #08090c;
+  --sx-panel: #0d0f13;
+  --sx-panel-light: #12151b;
+
+  --sx-border: #22252d;
+
+  --sx-red: #a51d3d;
+  --sx-red-bright: #e23b55;
+
+  --sx-text: #e8e8ec;
+  --sx-muted: #858894;
+
+  position: relative;
+
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr) 250px;
+
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: var(--sx-bg);
+  color: var(--sx-text);
+
+  font-family: 'Inter', sans-serif;
+}
+
+/* =========================================
+   LEFT SIDEBAR
+========================================= */
+
+.chat-app .chat-sidebar {
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: #0c0e12;
+  border-right: 1px solid var(--sx-border);
+
+  z-index: 2;
+}
+
+.chat-app .sidebar-header {
+  flex-shrink: 0;
+
+  height: 82px;
+  padding: 0 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-bottom: 1px solid var(--sx-border);
+}
+
+.chat-app .sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-app .brand-symbol {
+  width: 39px;
+  height: 39px;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(165, 29, 61, 0.12);
+
+  border: 1px solid rgba(226, 59, 85, 0.3);
+  border-radius: 10px;
+
+  color: var(--sx-red-bright);
+}
+
+.chat-app .sidebar-brand h3 {
+  margin: 0;
+
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -1px;
+
+  color: #f1eff2;
+}
+
+.chat-app .sidebar-brand h3 span {
+  color: var(--sx-red-bright);
+}
+
+.chat-app .sidebar-brand small {
+  display: block;
+  margin-top: 3px;
+
+  color: var(--sx-muted);
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.3px;
+}
+
+.chat-app .icon-button {
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  width: 37px;
+  height: 37px;
+
+  border: 1px solid var(--sx-border);
+  border-radius: 9px;
+
+  background: #111319;
+  color: #b7b8c0;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.chat-app .icon-button:hover:not(:disabled) {
+  color: #fff;
+  background: #38121e;
+  border-color: var(--sx-red);
+}
+
+/* SEARCH */
+
+.chat-app .chat-search {
+  flex-shrink: 0;
+
+  margin: 19px 16px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 12px;
+
+  background: #080a0e;
+  border: 1px solid var(--sx-border);
+  border-radius: 8px;
+
+  color: var(--sx-muted);
+}
+
+.chat-app .chat-search input {
+  width: 100%;
+  min-width: 0;
+
+  background: transparent;
+  border: 0;
+  outline: 0;
+
+  color: white;
+  font-size: 12px;
+}
+
+.chat-app .chat-search input::placeholder {
+  color: #666b77;
+}
+
+.chat-app .chat-search > span {
+  white-space: nowrap;
+  font-family: monospace;
+  font-size: 15px;
+  color: #858894;
+}
+
+/* CONVERSATION LIST */
+
+.chat-app .conversation-section {
+  flex: 1;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 4px 12px;
+
+  overscroll-behavior: contain;
+}
+
+.chat-app .section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin: 5px 8px 15px;
+
+  color: #888b97;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+}
+
+.chat-app .conversation-count {
+  padding: 3px 8px;
+
+  background: #1c151b;
+  border-radius: 5px;
+
+  color: #e26a80;
+}
+
+.chat-app .conversation-item {
+  width: 100%;
+  min-height: 72px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 11px;
+  margin-bottom: 5px;
+
+  text-align: left;
+
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  color: white;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.chat-app .conversation-item:hover {
+  background: #15151c;
+}
+
+.chat-app .conversation-item.active {
+  background: linear-gradient(100deg, #25121b, #151218);
+  border-color: #572034;
+}
+
+.chat-app .conversation-avatar,
+.chat-app .contact-avatar {
+  position: relative;
+  flex-shrink: 0;
+
+  width: 43px;
+  height: 43px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #25151e;
+  border: 1px solid #653047;
+
+  color: #e5a0af;
+  font-weight: 650;
+}
+
+.chat-app .conversation-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-app .conversation-info strong,
+.chat-app .conversation-info small {
+  display: block;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-app .conversation-info strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chat-app .conversation-info small {
+  margin-top: 5px;
+  color: var(--sx-muted);
+  font-size: 10px;
+}
+
+.chat-app .conversation-arrow {
+  color: #555965;
+  font-size: 17px;
+}
+
+/* EMPTY AND LOADING STATES */
+
+.chat-app .chat-state {
+  min-height: 180px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  text-align: center;
+  color: var(--sx-muted);
+  font-size: 12px;
+}
+
+.chat-app .chat-state strong {
+  color: #d5d3d9;
+}
+
+.chat-app .chat-state small {
+  font-size: 10px;
+}
+
+.chat-app .empty-conversations {
+  padding: 35px 12px;
+
+  color: #858894;
+
+  text-align: center;
+
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.chat-app .empty-conversations button {
+  width: auto;
+  padding: 9px 14px;
+
+  color: #f0a0b0;
+  background: #35111d;
+
+  border: 1px solid #70243b;
+  border-radius: 6px;
+}
+
+/* SIDEBAR BOTTOM */
+
+.chat-app .sidebar-bottom {
+  flex-shrink: 0;
+
+  padding: 13px 16px;
+
+  border-top: 1px solid var(--sx-border);
+}
+
+.chat-app .connection-status {
+  margin-bottom: 14px;
+
+  color: #8c929e;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+}
+
+.chat-app .connection-status span {
+  display: inline-block;
+
+  width: 7px;
+  height: 7px;
+
+  margin-right: 7px;
+
+  border-radius: 50%;
+
+  background: #4ac48b;
+  box-shadow: 0 0 8px rgba(74, 196, 139, 0.5);
+}
+
+.chat-app .sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-app .profile-avatar {
+  flex-shrink: 0;
+
+  width: 37px;
+  height: 37px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #21141b;
+  border: 1px solid #633044;
+
+  color: #e4a0af;
+}
+
+.chat-app .my-account {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-app .my-account strong,
+.chat-app .my-account small {
+  display: block;
+}
+
+.chat-app .my-account strong {
+  font-size: 11px;
+}
+
+.chat-app .my-account small {
+  margin-top: 3px;
+  color: var(--sx-muted);
+  font-size: 9px;
+}
+
+/* =========================================
+   MAIN CHAT PANEL
+========================================= */
+
+.chat-app .chat-main {
+  position: relative;
+
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 40%,
+      rgba(100, 20, 42, 0.09),
+      transparent 55%
+    ),
+    #090a0e;
+}
+
+.chat-app .chat-content {
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/* CHAT HEADER */
+
+.chat-app .chat-header {
+  flex-shrink: 0;
+
+  min-height: 82px;
+  padding: 0 26px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  background: #0d0f14;
+  border-bottom: 1px solid var(--sx-border);
+}
+
+.chat-app .contact-avatar {
+  width: 43px;
+  height: 43px;
+  font-size: 17px;
+}
+
+.chat-app .contact-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-app .contact-details h5 {
+  margin: 0;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-app .contact-details small {
+  display: block;
+  margin-top: 6px;
+
+  color: var(--sx-muted);
+  font-size: 10px;
+}
+
+.chat-app .online-dot {
+  display: inline-block;
+
+  width: 7px;
+  height: 7px;
+
+  margin-right: 5px;
+
+  border-radius: 50%;
+  background: #48bd83;
+}
+
+.chat-app .encryption-indicator {
+  flex-shrink: 0;
+
+  padding: 8px 11px;
+
+  border: 1px solid #38202b;
+  border-radius: 6px;
+
+  background: #191119;
+  color: #d68a9d;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+}
+
+/* =========================================
+   MESSAGE HISTORY
+========================================= */
+
+.chat-app .message-history {
+  flex: 1;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 24px;
+
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+.chat-app .message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  width: 100%;
+}
+
+.chat-app .message-row {
+  display: flex;
+  width: 100%;
+}
+
+.chat-app .message-own {
+  justify-content: flex-end;
+}
+
+.chat-app .message-other {
+  justify-content: flex-start;
+}
+
+.chat-app .message-bubble {
+  max-width: min(70%, 600px);
+  min-width: 80px;
+
+  padding: 12px 16px;
+
+  border: 1px solid rgba(220, 35, 55, 0.25);
+  border-radius: 13px;
+
+  background: #171719;
+  color: #f2f2f2;
+
+  overflow-wrap: anywhere;
+
+  animation: secureMessageIn 0.2s ease-out;
+}
+
+.chat-app .message-own .message-bubble {
+  background: #351116;
+  border-color: rgba(235, 40, 65, 0.55);
+  border-bottom-right-radius: 3px;
+}
+
+.chat-app .message-other .message-bubble {
+  border-bottom-left-radius: 3px;
+}
+
+.chat-app .message-bubble p {
+  margin: 0;
+
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.chat-app .message-meta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+
+  margin-top: 7px;
+
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+.chat-app .typing-indicator {
+  padding: 8px 12px;
+
+  color: #e45a69;
+  font-size: 12px;
+}
+
+/* EMPTY MESSAGE HISTORY */
+
+.chat-app .chat-empty-messages {
+  min-height: 100%;
+  min-height: 250px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  text-align: center;
+}
+
+.chat-app .private-icon {
+  width: 75px;
+  height: 75px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 23px;
+
+  border: 1px solid #562035;
+  border-radius: 22px;
+
+  background: #1c1119;
+  color: #e34b69;
+
+  font-size: 29px;
+
+  box-shadow: 0 0 45px rgba(190, 35, 75, 0.09);
+}
+
+.chat-app .private-label,
+.chat-app .welcome-overline {
+  color: #d15b77;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.chat-app .chat-empty-messages h4 {
+  margin: 14px 0 9px;
+
+  color: #eeeeF2;
+
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.chat-app .chat-empty-messages p {
+  max-width: 390px;
+
+  color: #858894;
+
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* =========================================
+   MESSAGE COMPOSER
+========================================= */
+
+.chat-app .message-composer {
+  flex-shrink: 0;
+
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 17px 24px;
+
+  background: #0d0f14;
+  border-top: 1px solid var(--sx-border);
+}
+
+.chat-app .message-composer input {
+  flex: 1;
+  min-width: 0;
+
+  height: 45px;
+
+  padding: 0 15px;
+
+  border: 1px solid var(--sx-border);
+  border-radius: 7px;
+
+  outline: 0;
+
+  background: #080a0e;
+  color: white;
+
+  font-size: 12px;
+}
+
+.chat-app .message-composer input::placeholder {
+  color: #666b77;
+}
+
+.chat-app .message-composer input:focus {
+  border-color: #a42d4c;
+}
+
+.chat-app .send-button {
+  flex-shrink: 0;
+
+  width: 43px;
+  height: 43px;
+
+  border: 1px solid #a42d4c;
+  border-radius: 8px;
+
+  background: #781b36;
+  color: white;
+
+  transition: 0.2s ease;
+}
+
+.chat-app .send-button:hover:not(:disabled) {
+  background: #a32649;
+}
+
+.chat-app button:disabled,
+.chat-app input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   WELCOME SCREEN
+========================================= */
+
+.chat-app .welcome-screen {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  text-align: center;
+}
+
+.chat-app .welcome-grid {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+  opacity: 0.12;
+
+  background-image:
+    linear-gradient(rgba(180, 40, 70, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 40, 70, 0.12) 1px, transparent 1px);
+
+  background-size: 45px 45px;
+
+  mask-image: radial-gradient(ellipse, black, transparent 75%);
+}
+
+.chat-app .welcome-icon {
+  position: relative;
+
+  width: 90px;
+  height: 90px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 25px;
+
+  border: 1px solid #6d263d;
+  border-radius: 25px;
+
+  background: linear-gradient(145deg, #29121d, #100d13);
+
+  color: #e54b68;
+  font-size: 36px;
+
+  box-shadow: 0 0 65px rgba(185, 30, 70, 0.12);
+}
+
+.chat-app .welcome-screen h2 {
+  position: relative;
+
+  max-width: 500px;
+
+  margin: 17px 0 10px;
+
+  color: #f1eff2;
+
+  font-size: clamp(23px, 3vw, 34px);
+  font-weight: 650;
+  letter-spacing: -1px;
+}
+
+.chat-app .welcome-screen > p {
+  position: relative;
+
+  max-width: 430px;
+
+  color: #9695a0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.chat-app .welcome-security {
+  position: relative;
+
+  margin: 23px 0;
+  padding: 12px 16px;
+
+  border: 1px solid #38212b;
+  border-radius: 7px;
+
+  background: #151117;
+  color: #d68a9d;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+}
+
+.chat-app .welcome-screen > small {
+  position: relative;
+
+  color: #777b86;
+  font-size: 11px;
+}
+
+.chat-app .welcome-new-chat {
+  position: relative;
+
+  margin-top: 24px;
+  padding: 12px 18px;
+
+  border: 1px solid #8d2846;
+  border-radius: 7px;
+
+  background: #471526;
+  color: #fff;
+
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.chat-app .welcome-new-chat:hover {
+  background: #70203b;
+  box-shadow: 0 0 20px rgba(226, 59, 85, 0.15);
+}
+
+/* =========================================
+   RIGHT SECURITY PANEL
+========================================= */
+
+.chat-app .security-panel {
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 23px 18px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background: #0c0e12;
+  border-left: 1px solid var(--sx-border);
+
+  overscroll-behavior: contain;
+}
+
+.chat-app .security-panel-heading {
+  flex-shrink: 0;
+
+  display: flex;
+  justify-content: space-between;
+
+  color: #c4c4cc;
+
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.chat-app .security-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin: 39px 0 30px;
+
+  text-align: center;
+}
+
+.chat-app .security-ring {
+  width: 94px;
+  height: 94px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 17px;
+
+  border: 1px solid #6e2941;
+  border-radius: 50%;
+
+  background: radial-gradient(circle, #351421, #121016);
+
+  color: #e65370;
+  font-size: 34px;
+
+  box-shadow: 0 0 35px rgba(185, 30, 70, 0.1);
+}
+
+.chat-app .security-visual strong {
+  color: #e4a0af;
+
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.7px;
+}
+
+.chat-app .security-visual small {
+  margin-top: 7px;
+
+  color: #747985;
+
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 0.8px;
+}
+
+.chat-app .security-divider {
+  flex-shrink: 0;
+
+  height: 1px;
+  margin-bottom: 20px;
+
+  background: var(--sx-border);
+}
+
+.chat-app .security-detail {
+  flex-shrink: 0;
+
+  padding: 13px 0;
+
+  border-bottom: 1px solid #1c2027;
+}
+
+.chat-app .security-detail > span {
+  display: block;
+  margin-bottom: 8px;
+
+  color: #777d89;
+
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+.chat-app .security-detail > strong {
+  display: block;
+
+  color: #e2e0e7;
+
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.chat-app .security-detail > small {
+  display: block;
+  margin-top: 5px;
+
+  color: #777d89;
+  font-size: 9px;
+}
+
+.chat-app .security-detail .security-active {
+  color: #56c58e;
+  font-size: 10px;
+}
+
+.chat-app .security-panel-footer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+
+  margin-top: auto;
+  padding: 12px;
+
+  border: 1px solid #30212a;
+  border-radius: 7px;
+
+  background: #151117;
+  color: #bd8998;
+
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   NEW CHAT MODAL
+========================================= */
+
+.chat-app .new-chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.chat-app .new-chat-modal {
+  width: min(430px, 100%);
+
+  padding: 25px;
+
+  background: #111319;
+
+  border: 1px solid #552137;
+  border-radius: 12px;
+
+  box-shadow: 0 20px 90px rgba(0, 0, 0, 0.65);
+}
+
+.chat-app .new-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.chat-app .new-chat-header > div > span {
+  color: #d15b77;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.chat-app .new-chat-header h4 {
+  margin: 8px 0;
+
+  color: #f0edf1;
+  font-size: 20px;
+}
+
+.chat-app .new-chat-modal > p {
+  color: #999ba5;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.chat-app .new-chat-modal form {
+  margin-top: 23px;
+}
+
+.chat-app .new-chat-modal label {
+  display: block;
+  margin-bottom: 9px;
+
+  color: #c58b9b;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.chat-app .new-chat-modal form input {
+  width: 100%;
+  height: 45px;
+
+  padding: 0 13px;
+
+  border: 1px solid #34313b;
+  border-radius: 6px;
+
+  outline: 0;
+
+  background: #090b10;
+  color: white;
+
+  font-size: 12px;
+}
+
+.chat-app .new-chat-modal form input:focus {
+  border-color: #a42d4c;
+}
+
+.chat-app .new-chat-modal form button {
+  width: 100%;
+  height: 45px;
+
+  margin-top: 17px;
+
+  border: 1px solid #a42d4c;
+  border-radius: 6px;
+
+  background: #741c37;
+  color: white;
+
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+
+  cursor: pointer;
+}
+
+.chat-app .new-chat-modal form button:hover:not(:disabled) {
+  background: #922443;
+}
+
+.chat-app .new-chat-modal form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* =========================================
+   ERROR NOTIFICATIONS
+========================================= */
+
+.chat-app .chat-modal-error,
+.chat-app .chat-error-toast {
+  margin-top: 12px;
+  padding: 10px;
+
+  border: 1px solid #853047;
+  border-radius: 6px;
+
+  background: #29131b;
+  color: #f29aaa;
+
+  font-size: 11px;
+}
+
+.chat-app .chat-error-toast {
+  position: fixed;
+
+  right: 20px;
+  bottom: 20px;
+
+  z-index: 1001;
+
+  max-width: 350px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chat-app .chat-error-toast button {
+  flex-shrink: 0;
+
+  border: none;
+  background: transparent;
+
+  color: #f29aaa;
+  font-size: 18px;
+}
+
+/* =========================================
+   SCROLLBARS
+========================================= */
+
+.chat-app * {
+  scrollbar-width: thin;
+  scrollbar-color: #48202e #0c0e12;
+}
+
+.chat-app *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chat-app *::-webkit-scrollbar-track {
+  background: #101010;
+}
+
+.chat-app *::-webkit-scrollbar-thumb {
+  background: #70202b;
+  border-radius: 10px;
+}
+
+.chat-app *::-webkit-scrollbar-thumb:hover {
+  background: #c52d43;
+}
+
+/* =========================================
+   MESSAGE ANIMATION
+========================================= */
+
+@keyframes secureMessageIn {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+/* Smaller desktops and tablets */
+
+@media (max-width: 1100px) {
+  .chat-app {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .chat-app .security-panel {
+    display: none;
+  }
+}
+
+/* Tablets and mobile */
+
+@media (max-width: 650px) {
+  .chat-app {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .chat-app .sidebar-header {
+    justify-content: center;
+    padding: 0 8px;
+  }
+
+  .chat-app .sidebar-brand > div:last-child,
+  .chat-app .chat-search,
+  .chat-app .section-heading,
+  .chat-app .conversation-info,
+  .chat-app .conversation-arrow,
+  .chat-app .sidebar-bottom .connection-status,
+  .chat-app .my-account {
+    display: none;
+  }
+
+  .chat-app .sidebar-header .icon-button {
+    display: none;
+  }
+
+  .chat-app .conversation-section {
+    padding: 8px;
+  }
+
+  .chat-app .conversation-item {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .chat-app .conversation-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .chat-app .sidebar-bottom {
+    padding: 12px 5px;
+  }
+
+  .chat-app .sidebar-footer {
+    justify-content: center;
+  }
+
+  .chat-app .chat-header {
+    min-height: 72px;
+    padding: 0 12px;
+    gap: 9px;
+  }
+
+  .chat-app .contact-avatar {
+    width: 37px;
+    height: 37px;
+  }
+
+  .chat-app .contact-details h5 {
+    font-size: 12px;
+  }
+
+  .chat-app .encryption-indicator {
+    padding: 7px;
+    font-size: 0;
+  }
+
+  .chat-app .message-history {
+    padding: 14px;
+  }
+
+  .chat-app .message-bubble {
+    max-width: 88%;
+  }
+
+  .chat-app .message-composer {
+    min-height: 68px;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .chat-app .message-composer input {
+    height: 43px;
+  }
+
+  .chat-app .send-button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .chat-app .welcome-screen {
+    padding: 15px;
+  }
+
+  .chat-app .welcome-screen h2 {
+    font-size: 22px;
+  }
+
+  .chat-app .welcome-screen > p {
+    font-size: 11px;
+  }
+}
+
+/* Very narrow phones */
+
+@media (max-width: 380px) {
+  .chat-app {
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+
+  .chat-app .conversation-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .chat-app .chat-header {
+    padding: 0 8px;
+  }
+
+  .chat-app .message-history {
+    padding: 10px;
+  }
+
+  .chat-app .message-bubble {
+    max-width: 92%;
+    padding: 10px 12px;
+  }
+
+  .chat-app .message-bubble p {
+    font-size: 13px;
+  }
+}
+
+/* Login page responsive styling */
+
+@media (max-width: 600px) {
+  .reference-login-page {
+    padding: 18px 12px;
+  }
+
+  .reference-login-card {
+    width: min(440px, 96vw);
+  }
+
+  .reference-login-header {
+    min-height: 72px;
+    padding: 14px 19px;
+  }
+
+  .securex-brand {
+    font-size: 25px;
+  }
+
+  .reference-security-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .reference-login-body {
+    padding: 24px 20px;
+  }
+
+  .reference-description {
+    margin-bottom: 25px;
+    font-size: 12px;
+  }
+
+  .reference-field input {
+    height: 50px;
+    font-size: 13px;
+  }
+}
+
+/* =========================================
+    ACCESSIBILITY: REDUCED MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-app *,
+  .chat-app *::before,
+  .chat-app *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* =========================================
+   SECUREX AUTH SCREEN - FINAL ADJUSTMENTS
+   Existing design and functionality preserved
+========================================= */
+
+/* 1. SAME CARD DIMENSIONS FOR LOGIN AND REGISTER */
+
+.reference-login-card {
+  width: min(520px, 94vw);
+  height: min(760px, calc(100dvh - 40px));
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #633044 #0a090d;
+}
+
+.reference-login-header {
+  flex-shrink: 0;
+}
+
+.reference-login-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2. MORE VISIBLE BACKGROUND SYMBOLS */
+
+.reference-binary {
+  opacity: 0.21;
+}
+
+.reference-emblem {
+  border-color: rgba(163, 55, 85, 0.22);
+
+  box-shadow:
+    0 0 0 70px rgba(130, 43, 69, 0.045),
+    0 0 0 140px rgba(130, 43, 69, 0.028),
+    0 0 0 210px rgba(130, 43, 69, 0.016);
+}
+
+.reference-vignette {
+  background: radial-gradient(
+    circle,
+    transparent 15%,
+    rgba(0, 0, 0, 0.28) 75%,
+    #020203 100%
+  );
+}
+
+/* 3. INPUT BACKGROUND - NEVER TURN WHITE */
+
+.reference-field input,
+.reference-field input:focus,
+.reference-field input:hover,
+.reference-field input:active,
+.reference-field input:disabled {
+  background-color: #07070a !important;
+  color: #d2cbd4 !important;
+  caret-color: #d2cbd4;
+}
+
+/* Chrome autofill protection */
+
+.reference-field input:-webkit-autofill,
+.reference-field input:-webkit-autofill:hover,
+.reference-field input:-webkit-autofill:focus,
+.reference-field input:-webkit-autofill:active {
+  -webkit-text-fill-color: #d2cbd4 !important;
+
+  -webkit-box-shadow:
+    0 0 0 1000px #07070a inset !important;
+
+  box-shadow:
+    0 0 0 1000px #07070a inset !important;
+
+  background-color: #07070a !important;
+
+  caret-color: #d2cbd4;
+
+  transition: background-color 999999s ease-in-out 0s;
+}
+
+/* Firefox autofill protection */
+
+.reference-field input:-moz-autofill {
+  box-shadow: 0 0 0 1000px #07070a inset !important;
+  -moz-text-fill-color: #d2cbd4 !important;
+}
+
+/* 4. IMPROVED BUTTON BORDER RADIUS */
+
+.reference-login-button {
+  min-width: 180px;
+  min-height: 54px;
+
+  border-radius: 9px;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.reference-login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 5px 22px rgba(163, 45, 75, 0.25);
+}
+
+.reference-login-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.reference-switch-button {
+  border-radius: 8px;
+}
+
+/* 5. IMPROVED INPUT BORDER RADIUS */
+
+.reference-field input {
+  border-radius: 7px;
+}
+
+/* 6. RESPONSIVE CARD */
+
+@media (max-width: 600px) {
+  .reference-login-card {
+    width: min(440px, 96vw);
+    height: min(760px, calc(100dvh - 30px));
+  }
+}
+/* Make LOGIN and CREATE ACCOUNT buttons exactly equal */
+.reference-login-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.reference-login-button,
+.reference-switch-button {
+  box-sizing: border-box;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px;
+  height: 54px !important;
+  min-height: 54px !important;
+  padding: 0 16px !important;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+/* =========================================
+   SECUREX — GLOBAL DASHBOARD DESIGN SYSTEM
+   Login and registration remain untouched.
+========================================= */
+
+:root {
+  --sx-bg: #08090c;
+  --sx-panel: #0d0f13;
+  --sx-panel-light: #12151b;
+  --sx-input: #080a0e;
+
+  --sx-border: #29232b;
+  --sx-border-red: #633044;
+
+  --sx-red: #85364e;
+  --sx-red-bright: #a34b65;
+
+  --sx-text: #d0cbd3;
+  --sx-muted: #858894;
+
+  --sx-radius: 8px;
+}
+
+/* Dashboard surfaces */
+
+.chat-app,
+.chat-app > *,
+.security-dashboard,
+.security-command-center,
+.group-management,
+.device-management {
+  color: var(--sx-text);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Prevent white component backgrounds */
+
+.chat-app .security-dashboard,
+.chat-app .security-command-center,
+.chat-app .group-management,
+.chat-app .device-management {
+  background: var(--sx-bg);
+  color: var(--sx-text);
+}
+
+/* Consistent headings */
+
+.chat-app h1,
+.chat-app h2,
+.chat-app h3,
+.chat-app h4,
+.chat-app h5,
+.chat-app h6,
+.security-dashboard h1,
+.security-dashboard h2,
+.security-dashboard h3,
+.security-command-center h1,
+.security-command-center h2,
+.security-command-center h3,
+.group-management h1,
+.group-management h2,
+.group-management h3 {
+  color: #e2dce3;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+.security-dashboard h1,
+.security-command-center h1 {
+  font-size: 23px;
+}
+
+.security-dashboard h2,
+.security-command-center h2 {
+  font-size: 18px;
+}
+
+.security-dashboard h3,
+.security-command-center h3 {
+  font-size: 14px;
+}
+
+/* Consistent text */
+
+.chat-app p,
+.security-dashboard p,
+.security-command-center p,
+.group-management p,
+.device-management p {
+  color: #a19ba6;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+/* Cards */
+
+.security-dashboard .card,
+.security-dashboard .stat-card,
+.security-dashboard .security-card,
+.security-command-center .card,
+.security-command-center .stat-card,
+.security-command-center .security-card,
+.group-management .card,
+.device-management .card {
+  background: var(--sx-panel);
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  color: var(--sx-text);
+  box-shadow: none;
+}
+
+/* Inputs */
+
+.chat-app input,
+.chat-app select,
+.chat-app textarea,
+.security-dashboard input,
+.security-dashboard select,
+.security-dashboard textarea,
+.security-command-center input,
+.security-command-center select,
+.security-command-center textarea,
+.group-management input,
+.group-management select,
+.group-management textarea {
+  background: var(--sx-input);
+  color: var(--sx-text);
+  border: 1px solid var(--sx-border);
+  border-radius: 6px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+}
+
+.chat-app input:focus,
+.chat-app select:focus,
+.chat-app textarea:focus,
+.security-dashboard input:focus,
+.security-dashboard select:focus,
+.security-dashboard textarea:focus,
+.security-command-center input:focus,
+.security-command-center select:focus,
+.security-command-center textarea:focus {
+  border-color: var(--sx-red-bright);
+  box-shadow: 0 0 0 2px rgba(163, 75, 101, 0.12);
+}
+
+/* Buttons */
+
+.security-dashboard button,
+.security-command-center button,
+.group-management button,
+.device-management button {
+  background: #25121b;
+  color: #e0cbd2;
+  border: 1px solid #633044;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.security-dashboard button:hover:not(:disabled),
+.security-command-center button:hover:not(:disabled),
+.group-management button:hover:not(:disabled),
+.device-management button:hover:not(:disabled) {
+  background: #401827;
+  border-color: #a34b65;
+}
+
+/* Tables */
+
+.security-dashboard table,
+.security-command-center table,
+.group-management table,
+.device-management table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sx-panel);
+  color: var(--sx-text);
+  font-size: 12px;
+}
+
+.security-dashboard th,
+.security-command-center th,
+.group-management th,
+.device-management th {
+  background: #121016;
+  color: #b98b9b;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: left;
+  padding: 12px;
+}
+
+.security-dashboard td,
+.security-command-center td,
+.group-management td,
+.device-management td {
+  background: var(--sx-panel);
+  color: #c5c0ca;
+  border-top: 1px solid var(--sx-border);
+  padding: 12px;
+}
+
+/* Modals and dropdowns */
+
+.chat-app .modal,
+.chat-app [role="dialog"],
+.chat-app .dropdown-menu,
+.security-dashboard [role="dialog"],
+.security-command-center [role="dialog"] {
+  background: #101116;
+  color: var(--sx-text);
+  border: 1px solid var(--sx-border-red);
+  border-radius: 9px;
+}
+
+/* Labels and secondary text */
+
+.security-dashboard label,
+.security-command-center label,
+.group-management label,
+.device-management label {
+  color: #b7aeb9;
+  font-size: 11px;
+}
+
+/* Scrollbars */
+
+.security-dashboard *,
+.security-command-center *,
+.group-management *,
+.device-management * {
+  scrollbar-width: thin;
+  scrollbar-color: #633044 #0c0e12;
+}
+
+.security-dashboard *::-webkit-scrollbar,
+.security-command-center *::-webkit-scrollbar,
+.group-management *::-webkit-scrollbar,
+.device-management *::-webkit-scrollbar {
+  width: 6px;
+}
+
+.security-dashboard *::-webkit-scrollbar-thumb,
+.security-command-center *::-webkit-scrollbar-thumb,
+.group-management *::-webkit-scrollbar-thumb,
+.device-management *::-webkit-scrollbar-thumb {
+  background: #633044;
+  border-radius: 10px;
+}
+/* =========================================
+   SECUREX — CUSTOM DARK SCROLLBARS
+========================================= */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #633044 #0a090d;
+}
+
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #0a090d;
+    border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #633044;
+    border: 2px solid #0a090d;
+    border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #a34b65;
+}
+
+*::-webkit-scrollbar-corner {
+    background: #0a090d;
+}
+/* SECUREX CAMERA — BLACK & CRIMSON THEME */
+
+.sx-camera-controls {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  background: #08080b !important;
+  border: 1px solid #63243a;
+  border-radius: 16px;
+}
+
+.sx-camera-btn {
+  appearance: none !important;
+  background: #100b10 !important;
+  color: #ff7895 !important;
+  border: 1px solid #85364e !important;
+  border-radius: 12px !important;
+  padding: 11px 22px !important;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sx-camera-btn:hover {
+  background: #35101e !important;
+  border-color: #ff526f !important;
+  color: #fff !important;
+  box-shadow: 0 0 14px #a8325055;
+  transform: translateY(-1px);
+}
+
+.sx-camera-btn-primary,
+.sx-camera-btn-danger {
+  background: #741b35 !important;
+  color: #fff !important;
+  border: 1px solid #c34465 !important;
+}
+
+.sx-camera-btn-primary:hover,
+.sx-camera-btn-danger:hover {
+  background: #a3294b !important;
+}
+
+.sx-camera-recording-label {
+  width: 100%;
+  text-align: center;
+  color: #ff526f;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.sx-camera-recording-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #ff304f;
+  box-shadow: 0 0 10px #ff304f;
+}
+
+/* DARK AUDIO PLAYER */
+audio {
+  color-scheme: dark !important;
+  background: #100b10 !important;
+  border: 1px solid #85364e !important;
+  border-radius: 16px !important;
+  max-width: 100%;
+}
+
+audio::-webkit-media-controls-panel {
+  background: #171017 !important;
+}
+/* SecureX — Security Command Center navigation */
+/* SECUREX SECURITY COMMAND CENTER BUTTON */
+
+.security-center-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+
+    width: calc(100% - 24px) !important;
+    min-height: 60px;
+    margin: 8px 12px;
+    padding: 14px 18px !important;
+
+    background: linear-gradient(135deg, #190609, #080608) !important;
+    color: #ff4058 !important;
+
+    border: 1px solid #a31635 !important;
+    border-radius: 10px !important;
+
+    font-family: "Inter", sans-serif;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    text-align: left;
+
+    box-shadow: 0 0 12px rgba(255, 30, 65, 0.10);
+    transition: all 0.25s ease;
+}
+
+/* ONE SHIELD ICON */
+.security-center-nav i {
+    font-size: 22px !important;
+    color: #ff304f !important;
+    filter: drop-shadow(0 0 5px rgba(255, 48, 79, 0.5));
+}
+
+/* NO EXTRA GENERATED ICON */
+.security-center-nav::before,
+.security-center-nav::after {
+    content: none !important;
+    display: none !important;
+}
+
+.security-center-nav:hover {
+    background: linear-gradient(135deg, #350a14, #16060b) !important;
+    border-color: #ff304f !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 18px rgba(255, 30, 65, 0.25);
+}
+/* =========================================
+   SECUREX SECURITY COMMAND CENTER BUTTON
+========================================= */
+
+.security-center-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+
+    width: 100%;
+    min-height: 76px;
+    padding: 16px 20px !important;
+
+    background: linear-gradient(135deg, #160b11, #0b080c) !important;
+    color: #e58ba3 !important;
+
+    border: 1px solid #85364e !important;
+    border-radius: 15px !important;
+    outline: none !important;
+
+    font-family: "Inter", sans-serif;
+    font-size: 21px !important;
+    font-weight: 750 !important;
+    text-align: left;
+
+    box-shadow: inset 0 0 15px #85364e0d;
+    transition: all 0.25s ease;
+}
+
+/* Use the JSX Bootstrap icon only.
+   No ::before shield — prevents duplicate icons. */
+
+.security-center-nav i {
+    display: inline-flex;
+    flex: 0 0 27px;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 25px;
+    color: #e58ba3;
+
+    filter: drop-shadow(0 0 6px #e58ba388);
+}
+
+.security-center-nav:hover {
+    background: linear-gradient(135deg, #28101a, #13090e) !important;
+    color: #ff7895 !important;
+    border-color: #c34d6d !important;
+    box-shadow: 0 0 18px #a8325040;
+    transform: translateY(-1px);
+}
+
+.security-center-nav.active {
+    background: linear-gradient(135deg, #28101a, #13090e) !important;
+    border-color: #c34d6d !important;
+    box-shadow: 0 0 14px #a8325030;
+}
+
+.security-center-nav:focus-visible {
+    outline: 2px solid #e58ba3 !important;
+    outline-offset: 3px;
+}
+.security-center-nav {
+    min-height: 68px !important;
+    padding: 16px 20px !important;
+    gap: 15px !important;
+
+    background: linear-gradient(135deg, #1a0508, #080506) !important;
+    color: #ff1e35 !important;
+
+    border: 1px solid #ff1738 !important;
+    border-radius: 12px !important;
+
+    font-size: 19px !important;
+    font-weight: 800 !important;
+
+    box-shadow: 0 0 12px rgba(255, 0, 40, 0.16);
+}
+
+.security-center-nav i {
+    font-size: 27px !important;
+    color: #ff1738 !important;
+    filter: drop-shadow(0 0 7px rgba(255, 0, 40, 0.7));
+}
+
+.security-center-nav:hover {
+    background: linear-gradient(135deg, #39000b, #190006) !important;
+    color: #ff4055 !important;
+    border-color: #ff4055 !important;
+    box-shadow: 0 0 22px rgba(255, 0, 40, 0.3);
+}
+.security-center-nav {
+    background: linear-gradient(135deg, #18050a, #080507) !important;
+    color: #DC143C !important;
+    border: 1px solid #DC143C !important;
+    box-shadow: 0 0 12px rgba(220, 20, 60, 0.18);
+}
+
+.security-center-nav i {
+    color: #DC143C !important;
+    filter: drop-shadow(0 0 7px rgba(220, 20, 60, 0.65));
+}
+
+.security-center-nav:hover {
+    background: linear-gradient(135deg, #300814, #16050a) !important;
+    color: #FF355E !important;
+    border-color: #FF355E !important;
+    box-shadow: 0 0 20px rgba(220, 20, 60, 0.35);
+}
+.security-center-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    gap: 9px !important;
+
+    width: calc(100% - 24px) !important;
+    min-height: 46px !important;
+    padding: 10px 12px !important;
+
+    background: #100609 !important;
+    color: #DC143C !important;
+    border: 1px solid #8B102C !important;
+    border-radius: 8px !important;
+
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+
+    box-shadow: 0 0 8px rgba(220, 20, 60, 0.12);
+}
+
+.security-center-nav i {
+    flex: 0 0 auto !important;
+    font-size: 17px !important;
+    color: #DC143C !important;
+}
+
+.security-center-nav span {
+    white-space: nowrap !important;
+    font-size: 13px !important;
+}
+
+.security-center-nav:hover {
+    background: #260711 !important;
+    border-color: #DC143C !important;
+    color: #DC143C !important;
+}

@@ -116,13 +116,7 @@ SecureX follows a client-server architecture with a dedicated client-side crypto
 
 ### Architecture Diagram
 
-Add the architecture diagram at:
-
-`docs/architecture/securex-architecture.png`
-
-```md
-![SecureX System Architecture](docs/architecture/securex-architecture.png)
-```
+<img width="1536" height="1024" alt="SecureX System Architecture Infographic" src="https://github.com/user-attachments/assets/00925646-0457-4f86-8bb0-c18da2a9b298" />
 
 ### Architectural Components
 

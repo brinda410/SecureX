@@ -9,7 +9,11 @@ import {
 import { fetchUserPublicKey } from "./publicKeyService.js";
 import { getCryptoSession } from "./cryptoSession.js";
 
-const API_URL = `${import.meta.env.VITE_API_URL || "/api"}/messages`;
+/* =========================================
+   API CONFIGURATION
+========================================= */
+
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 const groupKeyCache = new Map();
 
@@ -78,6 +82,10 @@ function normalizePlaintext(value) {
     throw new Error("Decrypted message has an unsupported format.");
 }
 
+/* =========================================
+   API REQUEST
+========================================= */
+
 async function apiRequest(endpoint, options = {}) {
     const session = validateSession();
 
@@ -86,9 +94,11 @@ async function apiRequest(endpoint, options = {}) {
         headers: {
             Authorization: `Bearer ${session.token}`,
             Accept: "application/json",
+
             ...(options.body
                 ? { "Content-Type": "application/json" }
                 : {}),
+
             ...options.headers,
         },
     });
@@ -208,14 +218,8 @@ export async function rotateGroupKey(conversationId) {
         throw new Error("Duplicate or invalid group members.");
     }
 
-    /*
-     * Generate a completely new group AES key.
-     */
     const groupAESKey = await generateAESKey();
 
-    /*
-     * Encrypt the new group key separately for every member.
-     */
     const envelopes = await Promise.all(
         members.map(async (userId) => {
             const recipient = await fetchUserPublicKey(userId);
@@ -255,14 +259,8 @@ export async function rotateGroupKey(conversationId) {
         throw new Error("Group key rotation could not be confirmed.");
     }
 
-    /*
-     * Remove previous cached keys for this group.
-     */
     clearGroupKeyCache(conversationId);
 
-    /*
-     * Cache the newly generated key for this session.
-     */
     groupKeyCache.set(
         `${conversationId}:${nextEpoch}`,
         groupAESKey
@@ -349,9 +347,7 @@ export async function encryptMessageForGroup(
     validateSession();
 
     if (!conversationId) {
-        throw new Error(
-            "Conversation ID is required for group encryption."
-        );
+        throw new Error("Conversation ID is required for group encryption.");
     }
 
     if (!clientMessageId) {
@@ -365,9 +361,7 @@ export async function encryptMessageForGroup(
     const senderId = getId(getCryptoSession().userId);
 
     const members = [
-        ...new Set(
-            participantIds.map(getId).filter(Boolean)
-        ),
+        ...new Set(participantIds.map(getId).filter(Boolean)),
     ];
 
     if (
@@ -382,23 +376,13 @@ export async function encryptMessageForGroup(
         throw new Error("A group requires at least two members.");
     }
 
-    /*
-     * Retrieve the actual rotated group key.
-     */
     const groupAESKey = await getGroupAESKey(conversationId);
 
-    /*
-     * Encrypt message with the group AES key.
-     * A fresh IV is generated for every message.
-     */
     const encrypted = await encryptMessage(
         message,
         groupAESKey
     );
 
-    /*
-     * Generate message envelopes for all members.
-     */
     const recipientKeyEnvelopes = await Promise.all(
         members.map(async (userId) => {
             const recipient = await fetchUserPublicKey(userId);
@@ -466,9 +450,8 @@ export async function decryptStoredMessage(message) {
 
     let wrappedAESKey = null;
 
-    /*
-     * GROUP MESSAGE
-     */
+    /* GROUP MESSAGE */
+
     if (
         Array.isArray(message.recipientKeyEnvelopes) &&
         message.recipientKeyEnvelopes.length > 0
@@ -487,9 +470,8 @@ export async function decryptStoredMessage(message) {
 
         wrappedAESKey = myEnvelope.wrappedAESKey;
     } else {
-        /*
-         * PRIVATE MESSAGE
-         */
+        /* PRIVATE MESSAGE */
+
         const sender = (
             message.sender ||
             message.senderId ||
@@ -548,7 +530,6 @@ export function clearGroupKeyCache(conversationId) {
 /* =========================================
    SESSION VALIDATION
 ========================================= */
-
 export function validateEncryptionSession() {
     try {
         validateSession();

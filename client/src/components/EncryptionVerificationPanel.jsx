@@ -142,7 +142,7 @@ export default function EncryptionVerificationPanel() {
         });
 
         try {
-            // TEST 1: Generate AES-256-GCM key.
+            // TEST 1: AES-256-GCM key generation and encryption.
             const aesKey = await generateAESKey();
 
             if (
@@ -152,7 +152,6 @@ export default function EncryptionVerificationPanel() {
                 throw new Error("AES-256-GCM key validation failed.");
             }
 
-            // TEST 2: Encrypt a sample message.
             const encrypted = await encryptMessage(
                 TEST_MESSAGE,
                 aesKey
@@ -169,7 +168,7 @@ export default function EncryptionVerificationPanel() {
                 throw new Error("AES encryption test failed.");
             }
 
-            // TEST 3: RSA key generation and AES key wrapping.
+            // TEST 2: RSA-3072 key generation and AES key wrapping.
             updateResult("rsa", "RUNNING");
 
             const rsaPair = await generateRSAKeyPair();
@@ -202,7 +201,7 @@ export default function EncryptionVerificationPanel() {
                 throw new Error("RSA key wrapping test failed.");
             }
 
-            // TEST 4: Decrypt using the recovered AES key.
+            // TEST 3: Verify normal message decryption.
             updateResult("decryption", "RUNNING");
 
             const decrypted = await decryptMessage(
@@ -222,7 +221,7 @@ export default function EncryptionVerificationPanel() {
                 throw new Error("Message decryption verification failed.");
             }
 
-            // TEST 5: Tamper with ciphertext and verify rejection.
+            // TEST 4: Verify that modified ciphertext is rejected.
             updateResult("tampering", "RUNNING");
 
             const tamperedBytes = fromBase64(
@@ -241,7 +240,9 @@ export default function EncryptionVerificationPanel() {
                     encrypted.iv,
                     recoveredAESKey
                 );
-            } catch {
+            } catch (tamperError) {
+                // AES-GCM authentication rejection is EXPECTED here.
+                // Do not log it as an unexpected application error.
                 tamperingPassed = true;
             }
 
@@ -264,6 +265,7 @@ export default function EncryptionVerificationPanel() {
             });
 
             setOverall("PASS");
+
         } catch (err) {
             console.error("Encryption verification failed:", err);
 
@@ -272,6 +274,7 @@ export default function EncryptionVerificationPanel() {
             );
 
             setOverall("FAIL");
+
         } finally {
             setRunning(false);
         }

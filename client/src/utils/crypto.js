@@ -2,13 +2,19 @@
  * SecureX - Cryptography Utility
  * AES-256-GCM + RSA-OAEP-SHA256 + PBKDF2-SHA256
  *
- * Includes:
- * - Message encryption and decryption
- * - RSA key generation and management
- * - Private-key protection
- * - Encrypted file uploads and downloads
- * - Multi-recipient AES key wrapping
+ * Compatible with existing SecureX encrypted message formats.
  */
+
+const AES_ALGORITHM = "AES-GCM";
+const RSA_ALGORITHM = "RSA-OAEP";
+const RSA_HASH = "SHA-256";
+const AES_KEY_LENGTH = 256;
+const AES_IV_LENGTH = 12;
+const AES_TAG_LENGTH = 128;
+
+/* =========================================
+   BASE64 HELPERS
+========================================= */
 
 const arrayBufferToBase64 = (buffer) => {
     const bytes = buffer instanceof Uint8Array
@@ -27,33 +33,129 @@ const arrayBufferToBase64 = (buffer) => {
     return btoa(binary);
 };
 
-const base64ToArrayBuffer = (base64) => {
-    if (typeof base64 !== "string" || !base64) {
-        throw new Error("Invalid Base64 input");
+const base64ToArrayBuffer = (value) => {
+    if (value instanceof Uint8Array) {
+        return value;
     }
 
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+    if (value instanceof ArrayBuffer) {
+        return new Uint8Array(value);
     }
 
-    return bytes;
+    // Support serialized Node.js Buffer objects.
+    if (
+        value &&
+        typeof value === "object" &&
+        value.type === "Buffer" &&
+        Array.isArray(value.data)
+    ) {
+        return new Uint8Array(value.data);
+    }
+
+    // Support MongoDB binary serialization.
+    if (
+        value &&
+        typeof value === "object" &&
+        value.$binary?.base64
+    ) {
+        value = value.$binary.base64;
+    }
+
+    if (typeof value !== "string" || !value.trim()) {
+        throw new Error("Invalid Base64 input.");
+    }
+
+    let normalized = value.trim();
+
+    // Support Base64URL.
+    normalized = normalized
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+    // Restore missing Base64 padding.
+    normalized += "=".repeat(
+        (4 - (normalized.length % 4)) % 4
+    );
+
+    try {
+        const binary = atob(normalized);
+        const bytes = new Uint8Array(binary.length);
+
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        return bytes;
+    } catch {
+        throw new Error("Invalid or corrupted Base64 data.");
+    }
 };
+
+/* =========================================
+   CRYPTO VALIDATION
+========================================= */
+
+const ensureCrypto = () => {
+    if (
+        !globalThis.crypto?.subtle ||
+        !globalThis.crypto?.getRandomValues
+    ) {
+        throw new Error(
+            "Web Crypto API is unavailable. Use HTTPS."
+        );
+    }
+};
+
+const validateAESKey = (aesKey) => {
+    if (!aesKey || aesKey.type !== "secret") {
+        throw new Error("Invalid AES encryption key.");
+    }
+
+    if (
+        aesKey.algorithm?.name !== AES_ALGORITHM ||
+        aesKey.algorithm?.length !== AES_KEY_LENGTH
+    ) {
+        throw new Error("Expected an AES-256-GCM key.");
+    }
+};
+
+const validateRSAKey = (key) => {
+    if (
+        !key ||
+        key.algorithm?.name !== RSA_ALGORITHM ||
+        key.algorithm?.hash?.name !== RSA_HASH
+    ) {
+        throw new Error("Expected an RSA-OAEP-SHA256 key.");
+    }
+};
+
+/* =========================================
+   IV GENERATION
+========================================= */
 
 const generateIV = () => {
-    return window.crypto.getRandomValues(new Uint8Array(12));
+    ensureCrypto();
+
+    return globalThis.crypto.getRandomValues(
+        new Uint8Array(AES_IV_LENGTH)
+    );
 };
 
+/* =========================================
+   AES ENCRYPTION
+========================================= */
+
 const encryptBytes = async (data, aesKey) => {
+    ensureCrypto();
+    validateAESKey(aesKey);
+
     const iv = generateIV();
 
-    const encryptedData = await window.crypto.subtle.encrypt(
+    const encryptedData = await globalThis.crypto.subtle.encrypt(
         {
-            name: "AES-GCM",
+            name: AES_ALGORITHM,
             iv,
-            tagLength: 128
+            tagLength: AES_TAG_LENGTH
         },
         aesKey,
         data
@@ -65,95 +167,169 @@ const encryptBytes = async (data, aesKey) => {
     };
 };
 
-const decryptBytes = async (ciphertext, ivBase64, aesKey) => {
-    const iv = base64ToArrayBuffer(ivBase64);
+/* =========================================
+   AES DECRYPTION
+========================================= */
 
-    if (iv.length !== 12) {
-        throw new Error("Invalid AES-GCM IV. Expected 12 bytes.");
+const decryptBytes = async (
+    ciphertext,
+    ivBase64,
+    aesKey
+) => {
+    ensureCrypto();
+    validateAESKey(aesKey);
+
+    const iv = base64ToArrayBuffer(ivBase64);
+    const encryptedBytes = base64ToArrayBuffer(ciphertext);
+
+    if (iv.length !== AES_IV_LENGTH) {
+        throw new Error(
+            `Invalid AES-GCM IV: expected ${AES_IV_LENGTH} bytes, received ${iv.length}.`
+        );
     }
 
-    return window.crypto.subtle.decrypt(
+    if (encryptedBytes.length < 16) {
+        throw new Error(
+            "Invalid AES-GCM ciphertext: authentication tag is missing."
+        );
+    }
+
+    return globalThis.crypto.subtle.decrypt(
         {
-            name: "AES-GCM",
+            name: AES_ALGORITHM,
             iv,
-            tagLength: 128
+            tagLength: AES_TAG_LENGTH
         },
         aesKey,
-        ciphertext
+        encryptedBytes
     );
 };
 
-/* Generate AES-256-GCM key */
+/* =========================================
+   GENERATE AES-256 KEY
+========================================= */
 
 export const generateAESKey = async () => {
-    return window.crypto.subtle.generateKey(
+    ensureCrypto();
+
+    return globalThis.crypto.subtle.generateKey(
         {
-            name: "AES-GCM",
-            length: 256
+            name: AES_ALGORITHM,
+            length: AES_KEY_LENGTH
         },
         true,
         ["encrypt", "decrypt"]
     );
 };
 
-/* Encrypt message */
+/* =========================================
+   ENCRYPT MESSAGE
+========================================= */
 
 export const encryptMessage = async (message, aesKey) => {
     try {
-        const encoder = new TextEncoder();
-        const messageBytes = encoder.encode(message);
+        if (typeof message !== "string") {
+            throw new Error("Message must be a string.");
+        }
 
-        const encrypted = await encryptBytes(messageBytes, aesKey);
+        validateAESKey(aesKey);
+
+        const messageBytes = new TextEncoder().encode(message);
+
+        const encrypted = await encryptBytes(
+            messageBytes,
+            aesKey
+        );
 
         return {
-            ciphertext: arrayBufferToBase64(encrypted.ciphertext),
+            ciphertext: arrayBufferToBase64(
+                encrypted.ciphertext
+            ),
             iv: encrypted.iv,
             algorithm: "AES-256-GCM"
         };
     } catch (error) {
-        console.error("Encryption failed:", error);
-        throw new Error(`Unable to encrypt message: ${error.message}`);
+        console.error("SecureX encryption failed:", error);
+
+        throw new Error(
+            `Unable to encrypt message: ${error.message}`
+        );
     }
 };
 
-/* Decrypt message */
+/* =========================================
+   DECRYPT MESSAGE
+========================================= */
 
-export const decryptMessage = async (ciphertext, iv, aesKey) => {
+export const decryptMessage = async (
+    ciphertext,
+    iv,
+    aesKey
+) => {
     try {
-        const encryptedBytes = base64ToArrayBuffer(ciphertext);
-
         const decryptedData = await decryptBytes(
-            encryptedBytes,
+            ciphertext,
             iv,
             aesKey
         );
 
-        return new TextDecoder().decode(decryptedData);
+        return new TextDecoder("utf-8", {
+            fatal: true
+        }).decode(decryptedData);
+
     } catch (error) {
-        console.error("AES decryption failed:", error);
-        throw new Error(`Message decryption failed: ${error.message}`);
+        console.error(
+            "SecureX AES-GCM decryption failed:",
+            {
+                name: error.name,
+                message: error.message
+            }
+        );
+
+        if (error.name === "OperationError") {
+            throw new Error(
+                "AES-GCM authentication failed. The AES key, IV, or ciphertext does not match."
+            );
+        }
+
+        throw new Error(
+            `Message decryption failed: ${error.message}`
+        );
     }
 };
 
-/* Generate RSA-OAEP key pair */
+/* =========================================
+   RSA-OAEP KEY GENERATION
+========================================= */
 
 export const generateRSAKeyPair = async () => {
-    return window.crypto.subtle.generateKey(
+    ensureCrypto();
+
+    return globalThis.crypto.subtle.generateKey(
         {
-            name: "RSA-OAEP",
+            name: RSA_ALGORITHM,
             modulusLength: 3072,
             publicExponent: new Uint8Array([1, 0, 1]),
-            hash: "SHA-256"
+            hash: RSA_HASH
         },
         true,
-        ["wrapKey", "unwrapKey", "encrypt", "decrypt"]
+        [
+            "wrapKey",
+            "unwrapKey",
+            "encrypt",
+            "decrypt"
+        ]
     );
 };
 
-/* Export public key */
+/* =========================================
+   EXPORT PUBLIC KEY
+========================================= */
 
 export const exportPublicKey = async (publicKey) => {
-    const exported = await window.crypto.subtle.exportKey(
+    validateRSAKey(publicKey);
+
+    const exported = await globalThis.crypto.subtle.exportKey(
         "spki",
         publicKey
     );
@@ -161,82 +337,115 @@ export const exportPublicKey = async (publicKey) => {
     return arrayBufferToBase64(exported);
 };
 
-/* Import public key */
+/* =========================================
+   IMPORT PUBLIC KEY
+========================================= */
 
 export const importPublicKey = async (publicKeyBase64) => {
+    ensureCrypto();
+
     const keyData = base64ToArrayBuffer(publicKeyBase64);
 
-    return window.crypto.subtle.importKey(
+    return globalThis.crypto.subtle.importKey(
         "spki",
         keyData,
         {
-            name: "RSA-OAEP",
-            hash: "SHA-256"
+            name: RSA_ALGORITHM,
+            hash: RSA_HASH
         },
         true,
         ["wrapKey", "encrypt"]
     );
 };
 
-/* Wrap AES key using recipient's RSA public key */
+/* =========================================
+   WRAP AES KEY
+========================================= */
 
-export const wrapAESKey = async (aesKey, recipientPublicKey) => {
-    const wrappedKey = await window.crypto.subtle.wrapKey(
+export const wrapAESKey = async (
+    aesKey,
+    recipientPublicKey
+) => {
+    ensureCrypto();
+
+    validateAESKey(aesKey);
+    validateRSAKey(recipientPublicKey);
+
+    if (!recipientPublicKey.usages.includes("wrapKey")) {
+        throw new Error(
+            "RSA public key does not permit AES key wrapping."
+        );
+    }
+
+    const wrappedKey = await globalThis.crypto.subtle.wrapKey(
         "raw",
         aesKey,
         recipientPublicKey,
         {
-            name: "RSA-OAEP"
+            name: RSA_ALGORITHM
         }
     );
 
     return arrayBufferToBase64(wrappedKey);
 };
 
-/* Unwrap AES key using recipient's RSA private key */
+/* =========================================
+   UNWRAP AES KEY
+========================================= */
 
-export const unwrapAESKey = async (wrappedKeyBase64, privateKey) => {
+export const unwrapAESKey = async (
+    wrappedKeyBase64,
+    privateKey
+) => {
     try {
+        ensureCrypto();
+
         if (!wrappedKeyBase64 || !privateKey) {
-            throw new Error("Missing wrapped AES key or private key");
+            throw new Error(
+                "Missing wrapped AES key or private key."
+            );
         }
 
-        const wrappedKey = base64ToArrayBuffer(wrappedKeyBase64);
+        validateRSAKey(privateKey);
 
-        return await window.crypto.subtle.unwrapKey(
+        if (!privateKey.usages.includes("unwrapKey")) {
+            throw new Error(
+                "RSA private key does not permit key unwrapping."
+            );
+        }
+
+        const wrappedKey = base64ToArrayBuffer(
+            wrappedKeyBase64
+        );
+
+        return await globalThis.crypto.subtle.unwrapKey(
             "raw",
             wrappedKey,
             privateKey,
             {
-                name: "RSA-OAEP"
+                name: RSA_ALGORITHM
             },
             {
-                name: "AES-GCM",
-                length: 256
+                name: AES_ALGORITHM,
+                length: AES_KEY_LENGTH
             },
             true,
             ["encrypt", "decrypt"]
         );
+
     } catch (error) {
-        console.error("RSA key unwrapping failed:", error);
+        console.error(
+            "SecureX RSA key unwrapping failed:",
+            error
+        );
+
         throw error;
     }
 };
 
-/*
- * ENCRYPT FILE FOR MULTIPLE RECIPIENTS
- *
- * recipientPublicKeys format:
- *
- * [
- *   {
- *     userId: "user-id",
- *     publicKey: CryptoKey
- *   }
- * ]
- *
- * Every participant receives their own RSA-wrapped AES key.
- */
+/* =========================================
+   ENCRYPT FILE FOR MULTIPLE RECIPIENTS
+========================================= */
 
 export const encryptFileForRecipients = async (
     file,
@@ -244,47 +453,49 @@ export const encryptFileForRecipients = async (
 ) => {
     try {
         if (!(file instanceof File)) {
-            throw new Error("A valid file is required");
+            throw new Error("A valid file is required.");
         }
 
-        if (!Array.isArray(recipientPublicKeys) ||
-            recipientPublicKeys.length === 0) {
-            throw new Error("At least one recipient is required");
+        if (
+            !Array.isArray(recipientPublicKeys) ||
+            recipientPublicKeys.length === 0
+        ) {
+            throw new Error(
+                "At least one recipient is required."
+            );
         }
 
         const seenRecipients = new Set();
 
         for (const recipient of recipientPublicKeys) {
             if (!recipient?.userId || !recipient?.publicKey) {
-                throw new Error("Invalid recipient public key");
+                throw new Error(
+                    "Invalid recipient public key."
+                );
             }
 
-            const id = String(recipient.userId);
+            const id = String(recipient.userId).toLowerCase();
 
             if (seenRecipients.has(id)) {
-                throw new Error("Duplicate recipient detected");
+                throw new Error(
+                    "Duplicate recipient detected."
+                );
             }
 
             seenRecipients.add(id);
 
-            if (recipient.publicKey.algorithm?.name !== "RSA-OAEP") {
-                throw new Error("Recipient key must use RSA-OAEP");
-            }
+            validateRSAKey(recipient.publicKey);
         }
 
-        // Generate a unique AES key for this file.
         const aesKey = await generateAESKey();
 
-        // Read the original file into memory.
         const originalFileBytes = await file.arrayBuffer();
 
-        // Encrypt the file bytes.
         const encryptedFile = await encryptBytes(
             originalFileBytes,
             aesKey
         );
 
-        // Encrypt metadata separately using a fresh IV.
         const metadata = {
             name: file.name,
             type: file.type || "application/octet-stream",
@@ -301,7 +512,6 @@ export const encryptFileForRecipients = async (
             aesKey
         );
 
-        // Wrap the AES key for every participant.
         const recipientKeyEnvelopes = await Promise.all(
             recipientPublicKeys.map(async (recipient) => ({
                 userId: String(recipient.userId),
@@ -315,7 +525,9 @@ export const encryptFileForRecipients = async (
         return {
             encryptedBlob: new Blob(
                 [encryptedFile.ciphertext],
-                { type: "application/octet-stream" }
+                {
+                    type: "application/octet-stream"
+                }
             ),
 
             encryptedMetadata: arrayBufferToBase64(
@@ -323,34 +535,24 @@ export const encryptFileForRecipients = async (
             ),
 
             fileIv: encryptedFile.iv,
-
             metadataIv: encryptedMetadata.iv,
-
             recipientKeyEnvelopes,
-
             algorithm: "AES-256-GCM",
-
             originalSize: file.size
         };
+
     } catch (error) {
-        console.error("File encryption failed:", error);
-        throw new Error(`Unable to encrypt file: ${error.message}`);
+        console.error("SecureX file encryption failed:", error);
+
+        throw new Error(
+            `Unable to encrypt file: ${error.message}`
+        );
     }
 };
 
-/*
- * DECRYPT DOWNLOADED FILE
- *
- * encryptedData format:
- *
- * {
- *   encryptedBlob: Blob,
- *   encryptedMetadata: string,
- *   fileIv: string,
- *   metadataIv: string,
- *   wrappedAESKey: string
- * }
- */
+/* =========================================
+   DECRYPT FILE
+========================================= */
 
 export const decryptFile = async (
     encryptedData,
@@ -358,7 +560,9 @@ export const decryptFile = async (
 ) => {
     try {
         if (!encryptedData || !privateKey) {
-            throw new Error("Missing encrypted file or private key");
+            throw new Error(
+                "Missing encrypted file or private key."
+            );
         }
 
         const {
@@ -369,22 +573,25 @@ export const decryptFile = async (
             wrappedAESKey
         } = encryptedData;
 
-        if (!encryptedBlob ||
+        if (
+            !encryptedBlob ||
             !encryptedMetadata ||
             !fileIv ||
             !metadataIv ||
-            !wrappedAESKey) {
-            throw new Error("Incomplete encrypted attachment data");
+            !wrappedAESKey
+        ) {
+            throw new Error(
+                "Incomplete encrypted attachment data."
+            );
         }
 
-        // Recover the AES key using this recipient's private key.
         const aesKey = await unwrapAESKey(
             wrappedAESKey,
             privateKey
         );
 
-        // Decrypt the file contents.
-        const encryptedFileBytes = await encryptedBlob.arrayBuffer();
+        const encryptedFileBytes =
+            await encryptedBlob.arrayBuffer();
 
         const decryptedFileBytes = await decryptBytes(
             encryptedFileBytes,
@@ -392,10 +599,8 @@ export const decryptFile = async (
             aesKey
         );
 
-        // Decrypt the file metadata.
-        const encryptedMetadataBytes = base64ToArrayBuffer(
-            encryptedMetadata
-        );
+        const encryptedMetadataBytes =
+            base64ToArrayBuffer(encryptedMetadata);
 
         const decryptedMetadataBytes = await decryptBytes(
             encryptedMetadataBytes,
@@ -404,20 +609,25 @@ export const decryptFile = async (
         );
 
         const metadata = JSON.parse(
-            new TextDecoder().decode(decryptedMetadataBytes)
+            new TextDecoder("utf-8", {
+                fatal: true
+            }).decode(decryptedMetadataBytes)
         );
 
         if (
             typeof metadata.name !== "string" ||
             typeof metadata.type !== "string"
         ) {
-            throw new Error("Invalid decrypted file metadata");
+            throw new Error(
+                "Invalid decrypted file metadata."
+            );
         }
 
         const decryptedBlob = new Blob(
             [decryptedFileBytes],
             {
-                type: metadata.type || "application/octet-stream"
+                type: metadata.type ||
+                    "application/octet-stream"
             }
         );
 
@@ -427,51 +637,77 @@ export const decryptFile = async (
             mimeType: metadata.type,
             size: metadata.size
         };
+
     } catch (error) {
-        console.error("File decryption failed:", error);
-        throw new Error(`Unable to decrypt file: ${error.message}`);
+        console.error("SecureX file decryption failed:", error);
+
+        throw new Error(
+            `Unable to decrypt file: ${error.message}`
+        );
     }
 };
 
-/* Derive password-based protection key */
+/* =========================================
+   PBKDF2 PASSWORD KEY DERIVATION
+========================================= */
 
-const deriveProtectionKey = async (password, salt) => {
-    const encoder = new TextEncoder();
+const deriveProtectionKey = async (
+    password,
+    salt
+) => {
+    ensureCrypto();
 
-    const passwordKey = await window.crypto.subtle.importKey(
-        "raw",
-        encoder.encode(password),
-        "PBKDF2",
-        false,
-        ["deriveKey"]
-    );
+    if (
+        typeof password !== "string" ||
+        !password
+    ) {
+        throw new Error("A valid password is required.");
+    }
 
-    return window.crypto.subtle.deriveKey(
+    const passwordKey =
+        await globalThis.crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(password),
+            "PBKDF2",
+            false,
+            ["deriveKey"]
+        );
+
+    return globalThis.crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
             salt,
             iterations: 600000,
-            hash: "SHA-256"
+            hash: RSA_HASH
         },
         passwordKey,
         {
-            name: "AES-GCM",
-            length: 256
+            name: AES_ALGORITHM,
+            length: AES_KEY_LENGTH
         },
         false,
         ["encrypt", "decrypt"]
     );
 };
 
-/* Protect RSA private key before storage */
+/* =========================================
+   PROTECT PRIVATE KEY
+========================================= */
 
-export const protectPrivateKey = async (privateKey, password) => {
-    const privateKeyData = await window.crypto.subtle.exportKey(
-        "pkcs8",
-        privateKey
-    );
+export const protectPrivateKey = async (
+    privateKey,
+    password
+) => {
+    ensureCrypto();
+    validateRSAKey(privateKey);
 
-    const salt = window.crypto.getRandomValues(
+    const privateKeyData =
+        await globalThis.crypto.subtle.exportKey(
+            "pkcs8",
+            privateKey
+        );
+
+    const salt = globalThis.crypto.getRandomValues(
         new Uint8Array(16)
     );
 
@@ -482,18 +718,21 @@ export const protectPrivateKey = async (privateKey, password) => {
         salt
     );
 
-    const encryptedPrivateKey = await window.crypto.subtle.encrypt(
-        {
-            name: "AES-GCM",
-            iv,
-            tagLength: 128
-        },
-        protectionKey,
-        privateKeyData
-    );
+    const encryptedPrivateKey =
+        await globalThis.crypto.subtle.encrypt(
+            {
+                name: AES_ALGORITHM,
+                iv,
+                tagLength: AES_TAG_LENGTH
+            },
+            protectionKey,
+            privateKeyData
+        );
 
     return {
-        encryptedPrivateKey: arrayBufferToBase64(encryptedPrivateKey),
+        encryptedPrivateKey:
+            arrayBufferToBase64(encryptedPrivateKey),
+
         salt: arrayBufferToBase64(salt),
         iv: arrayBufferToBase64(iv),
         kdf: "PBKDF2-SHA256",
@@ -501,15 +740,39 @@ export const protectPrivateKey = async (privateKey, password) => {
     };
 };
 
-/* Unlock protected RSA private key */
+/* =========================================
+   UNLOCK PRIVATE KEY
+========================================= */
 
-export const unlockPrivateKey = async (protectedData, password) => {
+export const unlockPrivateKey = async (
+    protectedData,
+    password
+) => {
     try {
-        const salt = base64ToArrayBuffer(protectedData.salt);
-        const iv = base64ToArrayBuffer(protectedData.iv);
+        ensureCrypto();
 
-        if (salt.length !== 16 || iv.length !== 12) {
-            throw new Error("Invalid private-key protection parameters");
+        if (
+            !protectedData?.salt ||
+            !protectedData?.iv ||
+            !protectedData?.encryptedPrivateKey
+        ) {
+            throw new Error(
+                "Incomplete protected private-key data."
+            );
+        }
+
+        const salt = base64ToArrayBuffer(
+            protectedData.salt
+        );
+
+        const iv = base64ToArrayBuffer(
+            protectedData.iv
+        );
+
+        if (salt.length !== 16 || iv.length !== AES_IV_LENGTH) {
+            throw new Error(
+                "Invalid private-key protection parameters."
+            );
         }
 
         const protectionKey = await deriveProtectionKey(
@@ -517,28 +780,38 @@ export const unlockPrivateKey = async (protectedData, password) => {
             salt
         );
 
-        const decryptedPrivateKey = await window.crypto.subtle.decrypt(
-            {
-                name: "AES-GCM",
-                iv,
-                tagLength: 128
-            },
-            protectionKey,
-            base64ToArrayBuffer(protectedData.encryptedPrivateKey)
-        );
+        const decryptedPrivateKey =
+            await globalThis.crypto.subtle.decrypt(
+                {
+                    name: AES_ALGORITHM,
+                    iv,
+                    tagLength: AES_TAG_LENGTH
+                },
+                protectionKey,
+                base64ToArrayBuffer(
+                    protectedData.encryptedPrivateKey
+                )
+            );
 
-        return window.crypto.subtle.importKey(
+        return globalThis.crypto.subtle.importKey(
             "pkcs8",
             decryptedPrivateKey,
             {
-                name: "RSA-OAEP",
-                hash: "SHA-256"
+                name: RSA_ALGORITHM,
+                hash: RSA_HASH
             },
             true,
             ["unwrapKey", "decrypt"]
         );
+
     } catch (error) {
-        console.error("Private key unlock failed:", error);
-        throw new Error(`Unable to unlock private key: ${error.message}`);
+        console.error(
+            "SecureX private-key unlock failed:",
+            error
+        );
+
+        throw new Error(
+            `Unable to unlock private key: ${error.message}`
+        );
     }
 };

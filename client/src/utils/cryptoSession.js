@@ -1,8 +1,8 @@
-// ==========================================
-// SECUREX - CRYPTOGRAPHIC SESSION MANAGER
-// ==========================================
+/*
+ * SECUREX - CRYPTOGRAPHIC SESSION MANAGER
+ */
 
-let cryptoSession = Object.freeze({
+const createEmptySession = () => Object.freeze({
     token: null,
     privateKey: null,
     userId: null,
@@ -10,9 +10,11 @@ let cryptoSession = Object.freeze({
     email: null
 });
 
-// ==========================================
-// NORMALIZE USER ID
-// ==========================================
+let cryptoSession = createEmptySession();
+
+/* =========================================
+    NORMALIZE USER ID
+========================================= */
 
 const normalizeUserId = (userId) => {
     if (!userId) return null;
@@ -33,9 +35,37 @@ const normalizeUserId = (userId) => {
     return String(userId);
 };
 
-// ==========================================
-// SET CRYPTO SESSION
-// ==========================================
+/* =========================================
+   VALIDATE PRIVATE KEY
+========================================= */
+
+const validatePrivateKey = (privateKey) => {
+    if (!privateKey) {
+        throw new Error("Private key is missing.");
+    }
+
+    if (
+        privateKey.type !== "private" ||
+        privateKey.algorithm?.name !== "RSA-OAEP" ||
+        privateKey.algorithm?.hash?.name !== "SHA-256"
+    ) {
+        throw new Error(
+            "Invalid SecureX RSA-OAEP-SHA256 private key."
+        );
+    }
+
+    if (!privateKey.usages.includes("unwrapKey")) {
+        throw new Error(
+            "Private key does not support AES key unwrapping."
+        );
+    }
+
+    return privateKey;
+};
+
+/* =========================================
+   SET CRYPTO SESSION
+========================================= */
 
 export const setCryptoSession = ({
     token,
@@ -44,27 +74,34 @@ export const setCryptoSession = ({
     name,
     email
 } = {}) => {
+    const normalizedUserId = normalizeUserId(userId);
+
+    if (privateKey) {
+        validatePrivateKey(privateKey);
+    }
 
     cryptoSession = Object.freeze({
         token: token || null,
         privateKey: privateKey || null,
-        userId: normalizeUserId(userId),
+        userId: normalizedUserId,
         name: name || null,
         email: email || null
     });
+
+    return cryptoSession;
 };
 
-// ==========================================
-// GET CRYPTO SESSION
-// ==========================================
+/* =========================================
+   GET CRYPTO SESSION
+========================================= */
 
 export const getCryptoSession = () => {
     return cryptoSession;
 };
 
-// ==========================================
-// CHECK SESSION STATUS
-// ==========================================
+/* =========================================
+   CHECK SESSION STATUS
+========================================= */
 
 export const isCryptoSessionActive = () => {
     return Boolean(
@@ -74,17 +111,28 @@ export const isCryptoSessionActive = () => {
     );
 };
 
-// ==========================================
-// CLEAR CRYPTO SESSION
-// ==========================================
+/* =========================================
+   CLEAR CRYPTO SESSION
+========================================= */
 
 export const clearCryptoSession = () => {
+    cryptoSession = createEmptySession();
+};
 
-    cryptoSession = Object.freeze({
-        token: null,
-        privateKey: null,
-        userId: null,
-        name: null,
-        email: null
-    });
+/* =========================================
+   VALIDATE CURRENT SESSION
+========================================= */
+
+export const validateCryptoSession = () => {
+    if (!cryptoSession.token) {
+        throw new Error("Authentication token is missing.");
+    }
+
+    if (!cryptoSession.userId) {
+        throw new Error("Crypto session user ID is missing.");
+    }
+
+    validatePrivateKey(cryptoSession.privateKey);
+
+    return true;
 };

@@ -150,7 +150,7 @@ function App() {
 
     // Check whether this account already has encryption keys.
     const keysResponse = await fetch(
-      "http://localhost:5000/api/users/keys/me",
+      `${import.meta.env.VITE_API_URL || "/api"}/users/keys/me`,
       { headers }
     );
 
@@ -226,7 +226,7 @@ function App() {
 
     // Retrieve authenticated user's profile.
     const profileResponse = await fetch(
-      "http://localhost:5000/api/users/me",
+      `${import.meta.env.VITE_API_URL || "/api"}/users/me`,
       { headers }
     );
 

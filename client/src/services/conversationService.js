@@ -1,7 +1,7 @@
 import { getCryptoSession } from "../utils/cryptoSession.js";
 
-const API_URL = "http://localhost:5000/api/conversations";
-const MESSAGE_API_URL = "http://localhost:5000/api/messages";
+const API_URL = `${import.meta.env.VITE_API_URL || "/api"}/conversations`;
+const MESSAGE_API_URL = `${import.meta.env.VITE_API_URL || "/api"}/messages`;
 
 const getHeaders = () => {
     const session = getCryptoSession();

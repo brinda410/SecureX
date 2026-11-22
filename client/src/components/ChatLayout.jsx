@@ -71,7 +71,7 @@ import {
   getUnreadCount,
 } from "../utils/chatHelpers.jsx";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const ATTACHMENT_PREFIX = "SECUREX_ATTACHMENT::";
 const REPLY_PREFIX = "SECUREX_REPLY::";

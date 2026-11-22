@@ -278,26 +278,26 @@ export const decryptMessage = async (
         }).decode(decryptedData);
 
     } catch (error) {
-        console.error(
-            "SecureX AES-GCM decryption failed:",
-            {
-                name: error.name,
-                message: error.message
-            }
-        );
 
+        // AES-GCM correctly rejects tampered ciphertext.
+        // Do not log this expected security-test rejection.
         if (error.name === "OperationError") {
             throw new Error(
                 "AES-GCM authentication failed. The AES key, IV, or ciphertext does not match."
             );
         }
 
+        // Log unexpected decryption errors.
+        console.error(
+            "SecureX AES-GCM decryption failed:",
+            error
+        );
+
         throw new Error(
             `Message decryption failed: ${error.message}`
         );
     }
 };
-
 /* =========================================
    RSA-OAEP KEY GENERATION
 ========================================= */

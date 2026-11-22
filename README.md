@@ -452,9 +452,11 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Project Links
 
-- **Live Application:** https://secure-x-silk.vercel.app/
-- **Backend:** https://securex-oiae.onrender.com
-- **GitHub Repository:** https://github.com/brinda410/Secure_Chat_Encryption
+| Resource | Link |
+|---|---|
+| Live Application | [Launch SecureX](https://secure-x-silk.vercel.app/) |
+| Backend API | [SecureX API](https://securex-oiae.onrender.com/) |
+| GitHub Repository | [View Source Code](https://github.com/brinda410/SecureX) |
 
 ---
 

@@ -69,9 +69,13 @@ const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174"
-];
+    "http://127.0.0.1:5174",
 
+    ...(process.env.CLIENT_URL || "")
+        .split(",")
+        .map(origin => origin.trim().replace(/\/$/, ""))
+        .filter(Boolean)
+];
 const corsOptions = {
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {

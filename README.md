@@ -398,11 +398,11 @@ The deployed frontend communicates with the backend hosted on Render. The backen
 
 SecureX uses separate hosting services for its frontend and backend.
 
-| Application Component | Hosting Platform | Deployment |
+| Component | Platform | Link |
 |---|---|---|
 | Frontend | Vercel | [SecureX Live Application](https://secure-x-silk.vercel.app/) |
-| Backend | Render | [SecureX API](https://securex-oiae.onrender.com) |
-| Source Code | GitHub | [SecureX Repository](https://github.com/brinda410/Secure_Chat_Encryption) |
+| Backend API | Render | [SecureX API](https://securex-oiae.onrender.com/) |
+| Source Code | GitHub | [SecureX Repository](https://github.com/brinda410/SecureX) |
 
 Deployment configuration should include the correct frontend API URL, backend CORS origins, database connection string, and JWT configuration.
 

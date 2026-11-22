@@ -9,6 +9,8 @@ import {
     resignGroupAdmin,
 } from "../services/conversationService.js";
 
+import { rotateGroupKey } from "../utils/messageEncryption.js";
+
 /* ==================================================
    SAFE VALUE HELPERS
 ================================================== */
@@ -112,8 +114,6 @@ function getGroupAdminIds(conversation) {
         ? conversation.groupAdmins.map(getId).filter(Boolean)
         : [];
 
-    // Prefer groupAdmins when available.
-    // Use the legacy field only for older conversations.
     if (admins.length > 0) {
         return [...new Set(admins)];
     }
@@ -136,7 +136,7 @@ function getGroupAdminIds(conversation) {
 }
 
 /* ==================================================
-   PROFESSIONAL SVG ICONS
+   SVG ICONS
 ================================================== */
 
 function Icon({ name, size = 18 }) {
@@ -183,6 +183,15 @@ function Icon({ name, size = 18 }) {
             <>
                 <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" />
                 <path d="m9 12 2 2 4-4" />
+            </>
+        ),
+
+        rotate: (
+            <>
+                <path d="M20 7v5h-5" />
+                <path d="M4 17v-5h5" />
+                <path d="M5.6 9A7 7 0 0 1 18 6l2 6" />
+                <path d="M18.4 15A7 7 0 0 1 6 18l-2-6" />
             </>
         ),
 
@@ -233,6 +242,7 @@ export default function GroupManagementPanel({
 }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const [confirmation, setConfirmation] = useState(null);
 
     const conversationId = getId(conversation);
@@ -249,7 +259,10 @@ export default function GroupManagementPanel({
     const adminIds = getGroupAdminIds(conversation);
 
     const isAdmin = Boolean(
-        currentId && adminIds.includes(currentId)
+        currentId &&
+        adminIds.some(
+            (id) => id.toLowerCase() === currentId.toLowerCase()
+        )
     );
 
     const remainingAdminCount = adminIds.length;
@@ -260,7 +273,11 @@ export default function GroupManagementPanel({
     );
 
     const adminMembers = participants.filter((person) =>
-        adminIds.includes(getParticipantId(person))
+        adminIds.some(
+            (id) =>
+                id.toLowerCase() ===
+                getParticipantId(person).toLowerCase()
+        )
     );
 
     const adminNames = adminMembers.length
@@ -300,9 +317,14 @@ export default function GroupManagementPanel({
         try {
             setBusy(true);
             setError("");
+            setSuccess("");
             setConfirmation(null);
 
             await action();
+
+            if (options.successMessage) {
+                setSuccess(options.successMessage);
+            }
 
             if (options.removed) {
                 onRemoved?.();
@@ -360,6 +382,25 @@ export default function GroupManagementPanel({
         );
     }
 
+    async function handleRotateGroupKey() {
+        await performAction(
+            async () => {
+                const result = await rotateGroupKey(conversationId);
+
+                if (result.rotated) {
+                    setSuccess(
+                        `Group encryption key successfully rotated to epoch ${result.epoch}.`
+                    );
+                } else {
+                    setSuccess(
+                        result.message ||
+                        "The group encryption key is already up to date."
+                    );
+                }
+            }
+        );
+    }
+
     async function handleResignAdmin() {
         await performAction(() =>
             resignGroupAdmin(conversationId)
@@ -391,6 +432,7 @@ export default function GroupManagementPanel({
         confirmLabel = "CONFIRM",
     }) {
         setError("");
+        setSuccess("");
 
         setConfirmation({
             title,
@@ -749,6 +791,18 @@ export default function GroupManagementPanel({
                         overflow-wrap: anywhere;
                     }
 
+                    .securex-group-success {
+                        margin: 0 20px 16px;
+                        padding: 11px 12px;
+                        border: 1px solid rgba(65,190,125,.3);
+                        border-radius: 8px;
+                        background: rgba(40,150,95,.1);
+                        color: #79d9a5;
+                        font-size: 11px;
+                        line-height: 1.5;
+                        overflow-wrap: anywhere;
+                    }
+
                     .securex-group-bottom {
                         padding: 12px 20px;
                         border-top: 1px solid rgba(255,255,255,.07);
@@ -801,7 +855,8 @@ export default function GroupManagementPanel({
                             padding: 15px;
                         }
 
-                        .securex-group-error {
+                        .securex-group-error,
+                        .securex-group-success {
                             margin-left: 15px;
                             margin-right: 15px;
                         }
@@ -871,10 +926,16 @@ export default function GroupManagementPanel({
                             const memberName = getParticipantName(member);
                             const memberEmail = getParticipantEmail(member);
 
-                            const isMemberAdmin = adminIds.includes(memberId);
+                            const isMemberAdmin = adminIds.some(
+                                (id) =>
+                                    id.toLowerCase() ===
+                                    memberId.toLowerCase()
+                            );
 
                             const isSelf = Boolean(
-                                currentId && memberId === currentId
+                                currentId &&
+                                memberId.toLowerCase() ===
+                                currentId.toLowerCase()
                             );
 
                             return (
@@ -901,8 +962,6 @@ export default function GroupManagementPanel({
                                             </span>
                                         )}
                                     </div>
-
-                                    {/* ADMIN CONTROLS */}
 
                                     {isAdmin && !isSelf && (
                                         <div className="securex-group-actions">
@@ -1002,6 +1061,29 @@ export default function GroupManagementPanel({
                     <div className="securex-group-danger-zone">
                         {isAdmin && (
                             <>
+                                {/* ROTATE GROUP KEY */}
+
+                                <button
+                                    type="button"
+                                    className="securex-group-danger-button"
+                                    onClick={() =>
+                                        askConfirmation({
+                                            title: "Rotate group encryption key?",
+                                            description:
+                                                "SecureX will check whether rotation is required. If required, a new AES-256 group key will be generated and securely distributed to the current group members. Existing encrypted messages will remain unchanged. This does not rotate the key for every message.",
+                                            confirmLabel: "ROTATE GROUP KEY",
+                                            action: handleRotateGroupKey,
+                                        })
+                                    }
+                                    disabled={busy}
+                                    title="Rotate the group encryption key when required"
+                                >
+                                    <Icon name="rotate" size={16} />
+                                    ROTATE GROUP KEY
+                                </button>
+
+                                {/* RESIGN AS ADMIN */}
+
                                 <button
                                     type="button"
                                     className="securex-group-danger-button"
@@ -1031,6 +1113,8 @@ export default function GroupManagementPanel({
                                     </small>
                                 )}
 
+                                {/* DELETE GROUP */}
+
                                 <button
                                     type="button"
                                     className="securex-group-danger-button"
@@ -1050,6 +1134,8 @@ export default function GroupManagementPanel({
                                 </button>
                             </>
                         )}
+
+                        {/* LEAVE GROUP */}
 
                         {(!isAdmin || remainingAdminCount > 1) && (
                             <button
@@ -1078,6 +1164,14 @@ export default function GroupManagementPanel({
                 {error && (
                     <div className="securex-group-error" role="alert">
                         {error}
+                    </div>
+                )}
+
+                {/* SUCCESS */}
+
+                {success && (
+                    <div className="securex-group-success" role="status">
+                        {success}
                     </div>
                 )}
 

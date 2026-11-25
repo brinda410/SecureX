@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 import API from "./services/api.js";
 import ChatLayout from "./components/ChatLayout.jsx";
@@ -24,7 +24,6 @@ import {
     disconnectSocket,
 } from "./services/socket.js";
 
-// Gmail validation
 const GMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
 
 // PASSWORD INPUT
@@ -129,8 +128,12 @@ function App() {
         () => isCryptoSessionActive()
     );
 
-    const baseURL =
-        import.meta.env.VITE_API_URL || "/api";
+    const [restoreFailed, setRestoreFailed] = useState(false);
+    const [restoreAttempt, setRestoreAttempt] = useState(0);
+
+    const baseURL = (
+        import.meta.env.VITE_API_URL || "/api"
+    ).replace(/\/$/, "");
 
     // RESET FORM
     const resetForm = () => {
@@ -147,10 +150,7 @@ function App() {
         resetForm();
     };
 
-    /* =========================================
-       INITIALIZE SECURE SESSION
-    ========================================= */
-
+    // INITIALIZE SECURE SESSION
     const initializeSecureSession = async (
         authToken,
         accountPassword
@@ -217,23 +217,40 @@ function App() {
                 accountPassword
             );
 
-            await API.post(
-                "/users/keys",
+            const saveResponse = await fetch(
+                `${baseURL}/users/keys`,
                 {
-                    publicKey,
-                    encryptedPrivateKey:
-                        protectedPrivateKey.encryptedPrivateKey,
-                    salt: protectedPrivateKey.salt,
-                    iv: protectedPrivateKey.iv,
-                },
-                { headers }
+                    method: "POST",
+                    headers: {
+                        ...headers,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        publicKey,
+                        encryptedPrivateKey:
+                            protectedPrivateKey.encryptedPrivateKey,
+                        salt: protectedPrivateKey.salt,
+                        iv: protectedPrivateKey.iv,
+                    }),
+                }
             );
+
+            const saveData = await saveResponse
+                .json()
+                .catch(() => ({}));
+
+            if (!saveResponse.ok) {
+                throw new Error(
+                    saveData.message ||
+                    "Unable to save your encryption keys."
+                );
+            }
 
             privateKey = keyPair.privateKey;
         } else {
             const err = new Error(
                 keysData.message ||
-                    "Unable to retrieve your encryption keys."
+                "Unable to retrieve your encryption keys."
             );
 
             err.status = keysResponse.status;
@@ -252,7 +269,7 @@ function App() {
         if (!profileResponse.ok) {
             const err = new Error(
                 profileData.message ||
-                    "Unable to retrieve account profile."
+                "Unable to retrieve account profile."
             );
 
             err.status = profileResponse.status;
@@ -267,7 +284,6 @@ function App() {
             );
         }
 
-        // Set in-memory session
         setCryptoSession({
             token: authToken,
             privateKey,
@@ -282,7 +298,6 @@ function App() {
             );
         }
 
-        // Persist private CryptoKey for browser refreshes
         await persistPrivateKey(privateKey);
 
         connectSocket(authToken);
@@ -290,10 +305,7 @@ function App() {
         setCryptoUnlocked(true);
     };
 
-    /* =========================================
-       AUTOMATIC SESSION RESTORATION
-    ========================================= */
-
+    // AUTOMATIC SESSION RESTORATION
     useEffect(() => {
         let cancelled = false;
 
@@ -302,29 +314,32 @@ function App() {
 
             if (!savedToken) {
                 setToken(null);
+                setCryptoUnlocked(false);
                 setRestoreLoading(false);
+                setRestoreFailed(false);
                 return;
             }
 
-            try {
-                setRestoreLoading(true);
-                setError("");
+            setRestoreLoading(true);
+            setRestoreFailed(false);
+            setError("");
 
-                // Restore private key from IndexedDB
+            try {
                 const privateKey = await restorePrivateKey();
 
+                if (cancelled) return;
+
                 if (!privateKey) {
-                    throw new Error(
-                        "No saved encryption key was found on this device. Please log in again."
-                    );
+                    throw new Error("SAVED_KEY_MISSING");
                 }
 
-                // Verify JWT and retrieve user profile
                 const profileResponse = await fetch(
                     `${baseURL}/users/me`,
                     {
+                        method: "GET",
                         headers: {
                             Authorization: `Bearer ${savedToken}`,
+                            Accept: "application/json",
                         },
                     }
                 );
@@ -333,10 +348,12 @@ function App() {
                     .json()
                     .catch(() => ({}));
 
+                if (cancelled) return;
+
                 if (!profileResponse.ok) {
                     const err = new Error(
                         profileData.message ||
-                            "Unable to verify your session."
+                        "Unable to verify your session."
                     );
 
                     err.status = profileResponse.status;
@@ -351,9 +368,6 @@ function App() {
                     );
                 }
 
-                if (cancelled) return;
-
-                // Rebuild in-memory session
                 setCryptoSession({
                     token: savedToken,
                     privateKey,
@@ -364,50 +378,57 @@ function App() {
 
                 if (!isCryptoSessionActive()) {
                     throw new Error(
-                        "Session restoration failed."
+                        "Cryptographic session initialization failed."
                     );
+                }
+
+                if (cancelled) {
+                    clearCryptoSession();
+                    return;
                 }
 
                 connectSocket(savedToken);
 
                 setToken(savedToken);
                 setCryptoUnlocked(true);
+                setRestoreFailed(false);
                 setError("");
-
             } catch (err) {
+                if (cancelled) return;
+
                 console.error(
                     "SECUREX AUTOMATIC RESTORATION ERROR:",
                     err
                 );
 
-                if (cancelled) return;
-
                 disconnectSocket();
                 clearCryptoSession();
-
                 setCryptoUnlocked(false);
 
-                // Expired token or unavailable saved key:
-                // return to the normal login screen.
+                const status = err.status;
+
                 if (
-                    err.status === 401 ||
-                    err.status === 403 ||
-                    err.message.includes("No saved encryption key")
+                    status === 401 ||
+                    status === 403 ||
+                    err.message === "SAVED_KEY_MISSING"
                 ) {
                     sessionStorage.removeItem("token");
-
                     setToken(null);
+                    setRestoreFailed(false);
 
                     setError(
-                        err.status === 401 || err.status === 403
-                            ? "Your session has expired. Please log in again."
-                            : "Your encryption key is not available on this device. Please log in again."
+                        err.message === "SAVED_KEY_MISSING"
+                            ? "Your saved encryption key is unavailable on this device. Please log in again."
+                            : "Your session has expired. Please log in again."
                     );
                 } else {
-                    // For network or IndexedDB errors, preserve the token.
+                    // Keep token for retry after temporary failures.
+                    setToken(savedToken);
+                    setRestoreFailed(true);
+
                     setError(
                         err.message ||
-                            "Unable to restore your SecureX session."
+                        "Unable to restore your SecureX session."
                     );
                 }
             } finally {
@@ -422,12 +443,9 @@ function App() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [baseURL, restoreAttempt]);
 
-    /* =========================================
-       LOGIN / REGISTRATION
-    ========================================= */
-
+    // LOGIN / REGISTRATION
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError("");
@@ -435,9 +453,7 @@ function App() {
         const normalizedEmail = email.trim().toLowerCase();
 
         if (!GMAIL_REGEX.test(normalizedEmail)) {
-            setError(
-                "Please enter a valid Gmail address."
-            );
+            setError("Please enter a valid Gmail address.");
             return;
         }
 
@@ -501,11 +517,7 @@ function App() {
                 );
             }
 
-            sessionStorage.setItem(
-                "token",
-                receivedToken
-            );
-
+            sessionStorage.setItem("token", receivedToken);
             setToken(receivedToken);
 
             await initializeSecureSession(
@@ -513,8 +525,8 @@ function App() {
                 password
             );
 
+            setRestoreFailed(false);
             resetForm();
-
         } catch (err) {
             console.error(
                 "SECUREX AUTHENTICATION ERROR:",
@@ -523,7 +535,6 @@ function App() {
 
             disconnectSocket();
             clearCryptoSession();
-
             sessionStorage.removeItem("token");
 
             try {
@@ -537,21 +548,19 @@ function App() {
 
             setToken(null);
             setCryptoUnlocked(false);
+            setRestoreFailed(false);
 
             setError(
                 err.response?.data?.message ||
-                    err.message ||
-                    "Authentication failed. Please try again."
+                err.message ||
+                "Authentication failed. Please try again."
             );
         } finally {
             setLoading(false);
         }
     };
 
-    /* =========================================
-       LOGOUT
-    ========================================= */
-
+    // LOGOUT
     const handleLogout = async () => {
         disconnectSocket();
         clearCryptoSession();
@@ -560,6 +569,7 @@ function App() {
 
         setToken(null);
         setCryptoUnlocked(false);
+        setRestoreFailed(false);
 
         try {
             await removePersistedPrivateKey();
@@ -574,10 +584,7 @@ function App() {
         setIsRegister(false);
     };
 
-    /* =========================================
-       RESTORATION LOADING SCREEN
-    ========================================= */
-
+    // RESTORATION LOADING SCREEN
     if (token && restoreLoading) {
         return (
             <main className="reference-login-page">
@@ -613,10 +620,70 @@ function App() {
         );
     }
 
-    /* =========================================
-       AUTHENTICATED AND UNLOCKED
-    ========================================= */
+    // TEMPORARY RESTORATION FAILURE
+    if (token && restoreFailed) {
+        return (
+            <main className="reference-login-page">
+                <div className="reference-background">
+                    <div className="reference-binary" />
+                    <div className="reference-emblem" />
+                    <div className="reference-vignette" />
+                </div>
 
+                <section className="reference-login-card">
+                    <header className="reference-login-header">
+                        <div className="securex-brand">
+                            Secure<span>X</span>
+                        </div>
+
+                        <div className="reference-security-icon">
+                            <i className="bi bi-shield-lock-fill" />
+                        </div>
+                    </header>
+
+                    <div className="reference-login-body">
+                        <p className="reference-description">
+                            Your secure session could not be restored.
+                        </p>
+
+                        <div className="reference-error" role="alert">
+                            <i className="bi bi-exclamation-triangle-fill" />
+                            <span>{error}</span>
+                        </div>
+
+                        <div className="reference-login-actions">
+                            <button
+                                type="button"
+                                className="reference-login-button"
+                                onClick={() => {
+                                    setRestoreAttempt(
+                                        (previous) => previous + 1
+                                    );
+                                }}
+                            >
+                                RETRY SESSION RESTORATION
+                            </button>
+
+                            <button
+                                type="button"
+                                className="reference-switch-button"
+                                onClick={handleLogout}
+                            >
+                                LOG OUT
+                            </button>
+                        </div>
+
+                        <div className="reference-login-footer">
+                            <span className="status-indicator" />
+                            SECUREX SESSION RECOVERY
+                        </div>
+                    </div>
+                </section>
+            </main>
+        );
+    }
+
+    // AUTHENTICATED DASHBOARD
     if (
         token &&
         cryptoUnlocked &&
@@ -625,11 +692,7 @@ function App() {
         return <ChatLayout onLogout={handleLogout} />;
     }
 
-    /* =========================================
-       ORIGINAL LOGIN / REGISTER SCREEN
-       PRESERVED
-    ========================================= */
-
+    // ORIGINAL LOGIN / REGISTER UI
     return (
         <main className="reference-login-page">
             <div className="reference-background">

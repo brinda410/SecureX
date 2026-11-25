@@ -6,7 +6,7 @@
 
 SecureX is a full-stack, real-time messaging application built around client-side end-to-end encryption (E2EE). It uses a hybrid cryptographic architecture combining AES-256-GCM for message encryption and RSA-OAEP for cryptographic key protection. The platform supports private and group conversations, authenticated real-time communication, encrypted message storage, and application-level security controls.
 
-**Live Application:** [Launch SecureX](https://secure-x-silk.vercel.app/)  
+- **Live Application:** https://secure-x-silk.vercel.app/
 
 ## Table of Contents
 

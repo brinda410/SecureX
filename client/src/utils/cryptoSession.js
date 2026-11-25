@@ -1,19 +1,27 @@
 /*
- * SECUREX - CRYPTOGRAPHIC SESSION MANAGER
+ * SECUREX - PERSISTENT CRYPTOGRAPHIC SESSION MANAGER
+ *
+ * In-memory session + IndexedDB private-key persistence.
+ * Compatible with existing SecureX RSA-OAEP-SHA256 keys.
  */
 
-const createEmptySession = () => Object.freeze({
-    token: null,
-    privateKey: null,
-    userId: null,
-    name: null,
-    email: null
-});
+const DB_NAME = "SecureXSessionDB";
+const STORE_NAME = "cryptoKeys";
+const KEY_ID = "activePrivateKey";
+
+const createEmptySession = () =>
+    Object.freeze({
+        token: null,
+        privateKey: null,
+        userId: null,
+        name: null,
+        email: null,
+    });
 
 let cryptoSession = createEmptySession();
 
 /* =========================================
-    NORMALIZE USER ID
+   NORMALIZE USER ID
 ========================================= */
 
 const normalizeUserId = (userId) => {
@@ -24,12 +32,14 @@ const normalizeUserId = (userId) => {
     }
 
     if (typeof userId === "object") {
-        return String(
-            userId._id ||
-            userId.id ||
-            userId.userId ||
-            ""
-        ) || null;
+        return (
+            String(
+                userId._id ||
+                userId.id ||
+                userId.userId ||
+                ""
+            ) || null
+        );
     }
 
     return String(userId);
@@ -54,13 +64,160 @@ const validatePrivateKey = (privateKey) => {
         );
     }
 
-    if (!privateKey.usages.includes("unwrapKey")) {
+    if (!privateKey.usages?.includes("unwrapKey")) {
         throw new Error(
             "Private key does not support AES key unwrapping."
         );
     }
 
     return privateKey;
+};
+
+/* =========================================
+   OPEN INDEXEDDB
+========================================= */
+
+const openDatabase = () =>
+    new Promise((resolve, reject) => {
+        if (!globalThis.indexedDB) {
+            reject(
+                new Error("IndexedDB is unavailable in this browser.")
+            );
+            return;
+        }
+
+        const request = indexedDB.open(DB_NAME, 1);
+
+        request.onupgradeneeded = () => {
+            const db = request.result;
+
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+
+        request.onsuccess = () => {
+            resolve(request.result);
+        };
+
+        request.onerror = () => {
+            reject(
+                request.error ||
+                new Error("Unable to open SecureX session storage.")
+            );
+        };
+
+        request.onblocked = () => {
+            reject(
+                new Error("SecureX session storage is blocked.")
+            );
+        };
+    });
+
+/* =========================================
+   PERSIST PRIVATE KEY
+========================================= */
+
+export const persistPrivateKey = async (privateKey) => {
+    validatePrivateKey(privateKey);
+
+    const db = await openDatabase();
+
+    try {
+        await new Promise((resolve, reject) => {
+            const transaction = db.transaction(
+                STORE_NAME,
+                "readwrite"
+            );
+
+            transaction.objectStore(STORE_NAME).put(
+                privateKey,
+                KEY_ID
+            );
+
+            transaction.oncomplete = resolve;
+
+            transaction.onerror = () => {
+                reject(transaction.error);
+            };
+
+            transaction.onabort = () => {
+                reject(transaction.error);
+            };
+        });
+    } finally {
+        db.close();
+    }
+};
+
+/* =========================================
+   RESTORE PRIVATE KEY
+========================================= */
+
+export const restorePrivateKey = async () => {
+    const db = await openDatabase();
+
+    try {
+        const privateKey = await new Promise(
+            (resolve, reject) => {
+                const transaction = db.transaction(
+                    STORE_NAME,
+                    "readonly"
+                );
+
+                const request = transaction
+                    .objectStore(STORE_NAME)
+                    .get(KEY_ID);
+
+                request.onsuccess = () => {
+                    resolve(request.result || null);
+                };
+
+                request.onerror = () => {
+                    reject(request.error);
+                };
+            }
+        );
+
+        if (!privateKey) {
+            return null;
+        }
+
+        return validatePrivateKey(privateKey);
+    } finally {
+        db.close();
+    }
+};
+
+/* =========================================
+   REMOVE PERSISTED PRIVATE KEY
+========================================= */
+
+export const removePersistedPrivateKey = async () => {
+    const db = await openDatabase();
+
+    try {
+        await new Promise((resolve, reject) => {
+            const transaction = db.transaction(
+                STORE_NAME,
+                "readwrite"
+            );
+
+            transaction.objectStore(STORE_NAME).delete(KEY_ID);
+
+            transaction.oncomplete = resolve;
+
+            transaction.onerror = () => {
+                reject(transaction.error);
+            };
+
+            transaction.onabort = () => {
+                reject(transaction.error);
+            };
+        });
+    } finally {
+        db.close();
+    }
 };
 
 /* =========================================
@@ -72,7 +229,7 @@ export const setCryptoSession = ({
     privateKey,
     userId,
     name,
-    email
+    email,
 } = {}) => {
     const normalizedUserId = normalizeUserId(userId);
 
@@ -85,7 +242,7 @@ export const setCryptoSession = ({
         privateKey: privateKey || null,
         userId: normalizedUserId,
         name: name || null,
-        email: email || null
+        email: email || null,
     });
 
     return cryptoSession;
@@ -125,11 +282,15 @@ export const clearCryptoSession = () => {
 
 export const validateCryptoSession = () => {
     if (!cryptoSession.token) {
-        throw new Error("Authentication token is missing.");
+        throw new Error(
+            "Authentication token is missing."
+        );
     }
 
     if (!cryptoSession.userId) {
-        throw new Error("Crypto session user ID is missing.");
+        throw new Error(
+            "Crypto session user ID is missing."
+        );
     }
 
     validatePrivateKey(cryptoSession.privateKey);
